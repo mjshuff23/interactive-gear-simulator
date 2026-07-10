@@ -1,0 +1,19 @@
+.github/workflows/quality.yml
+  s_8378d1347ccfd4::t_cb1ff469209a68 37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "851b58e6c93cd813c15ec7fe8f0ccf14d845954c",
+  "prompts": {},
+  "sessions": {
+    "s_8378d1347ccfd4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3eed-eeed-79c0-a261-deb3e3145dac",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
