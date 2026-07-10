@@ -1,0 +1,41 @@
+src/persistence/gear-systems.test.ts
+  s_8378d1347ccfd4::t_6f9b7f19b01e7b 1-82
+src/components/InspectorPanel.tsx
+  s_8378d1347ccfd4::t_ec84f69916210e 62,70,84,105,124,186-190,197-201
+src/schema/gear-system-schema.ts
+  s_8378d1347ccfd4::t_ec84f69916210e 53,56-66
+  s_8378d1347ccfd4::t_345f6ac94ddb38 67
+src/persistence/gear-systems.ts
+  s_8378d1347ccfd4::t_ec84f69916210e 55-58
+src/styles.css
+  s_8378d1347ccfd4::t_ec84f69916210e 3
+src/simulation/gear-system.test.ts
+  s_8378d1347ccfd4::t_ec84f69916210e 133,135
+src/schema/gear-system-schema.test.ts
+  s_8378d1347ccfd4::t_6f9b7f19b01e7b 1-21,27-28
+  s_8378d1347ccfd4::t_7e31012ca41d7f 22-26
+docs/roadmap/issues/m3-supabase-persistence.md
+  s_8378d1347ccfd4::t_ec84f69916210e 18
+src/App.tsx
+  s_8378d1347ccfd4::t_ec84f69916210e 126-145,180-183,188-191
+docs/architecture/system-map.md
+  s_8378d1347ccfd4::t_ec84f69916210e 31,36-37
+docs/supabase/gear-systems.sql
+  s_8378d1347ccfd4::t_ec84f69916210e 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "5f8c73b335a770012d478f2cbecc286a2936c70b",
+  "prompts": {},
+  "sessions": {
+    "s_8378d1347ccfd4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3eed-eeed-79c0-a261-deb3e3145dac",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
