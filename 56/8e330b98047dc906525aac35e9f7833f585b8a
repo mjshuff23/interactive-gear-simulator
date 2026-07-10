@@ -1,0 +1,57 @@
+src/schema/gear-system-schema.ts
+  s_8378d1347ccfd4::t_627f36ee5e0840 3-4,11,27-29,35-101
+src/lib/supabase.ts
+  s_8378d1347ccfd4::t_627f36ee5e0840 18
+README.md
+  s_8378d1347ccfd4::t_bc10fe04a2c534 18,26,29
+docs/architecture/system-map.md
+  s_8378d1347ccfd4::t_bc10fe04a2c534 71
+eslint.config.ts
+  s_8378d1347ccfd4::t_bae8b6aa275b56 7-15
+  s_8378d1347ccfd4::t_bc10fe04a2c534 32-37
+docs/roadmap/issues/m3-supabase-persistence.md
+  s_8378d1347ccfd4::t_bc10fe04a2c534 1
+src/components/InspectorPanel.tsx
+  s_8378d1347ccfd4::t_0431fd975e864e 61-67,69-72,83-91,104-112,123-131,185-193
+  s_8378d1347ccfd4::t_aa510d8086df4d 194
+docs/roadmap/issues/m4-ci-browser-coverage.md
+  s_8378d1347ccfd4::t_bc10fe04a2c534 1
+.gitignore
+  s_8378d1347ccfd4::t_bc10fe04a2c534 8
+src/simulation/gear-system.ts
+  s_8378d1347ccfd4::t_627f36ee5e0840 74-75,163-165
+.github/workflows/quality.yml
+  s_8378d1347ccfd4::t_bc10fe04a2c534 9-11,16-19,21-22,26-27,37
+docs/supabase/gear-systems.sql
+  s_8378d1347ccfd4::t_bc10fe04a2c534 15-54
+playwright.config.ts
+  s_8378d1347ccfd4::t_bc10fe04a2c534 12
+src/persistence/gear-systems.ts
+  s_8378d1347ccfd4::t_627f36ee5e0840 10-22,27,52-60
+src/App.tsx
+  s_8378d1347ccfd4::t_3b63850062cf82 1,36-43,50-52,54-56,90-92,207-212,264-271
+  s_8378d1347ccfd4::t_bcc6811f61a431 272-273
+src/components/GearCanvas.tsx
+  s_8378d1347ccfd4::t_1777d31c9bca20 1,52-99,111,146,167,176,178,186-220,223-229
+  s_8378d1347ccfd4::t_f5aa74fbd72f41 18-30,45,47-51,100-106,129-137,139,147,154,158,160-161,163-166,168-173,221,230-234,264,266-267,286,288-305,308,313,339-344,346
+src/simulation/gear-system.test.ts
+  s_8378d1347ccfd4::t_627f36ee5e0840 137-140
+src/styles.css
+  s_8378d1347ccfd4::t_d1de91070bb975 149-154
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.11",
+  "base_commit_sha": "568e330b98047dc906525aac35e9f7833f585b8a",
+  "prompts": {},
+  "sessions": {
+    "s_8378d1347ccfd4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3eed-eeed-79c0-a261-deb3e3145dac",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
