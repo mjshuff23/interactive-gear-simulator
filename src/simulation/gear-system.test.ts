@@ -130,7 +130,9 @@ describe("solveGearSystem", () => {
     expect(solved.framesByGear.coaxial.direction).toBe("counterclockwise");
     expect(solved.framesByGear.coaxial.angleDegrees).toBe(195);
   });
+});
 
+describe("formatSexagesimalAngle", () => {
   it("formats degrees as a base-60 degree-minute-second readout", () => {
     expect(formatSexagesimalAngle(43.2)).toBe("43 deg 12' 00\"");
   });

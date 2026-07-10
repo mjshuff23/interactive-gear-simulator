@@ -15,4 +15,4 @@ Add Supabase-backed saved gear systems using TypeScript client code and secure P
 - Browser uses only publishable Supabase credentials.
 - Service role keys are never exposed to Vite env vars.
 - RLS uses `to authenticated` and owner checks with `(select auth.uid())`.
-- Save/load works against a real Supabase project after env vars are configured.
+- Save/load works against a real Supabase project after env vars are configured, Supabase Auth is wired, and the user has an authenticated session.

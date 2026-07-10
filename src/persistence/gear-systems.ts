@@ -27,7 +27,6 @@ export async function saveGearSystem(
       owner_id: user.id,
       name: gearSystem.name,
       definition,
-      updated_at: new Date().toISOString(),
     })
     .select("id,name,updated_at")
     .single();
@@ -53,7 +52,10 @@ export async function loadGearSystems(client: GearSupabaseClient) {
     const parsed = gearSystemSchema.safeParse(row.definition);
 
     if (parsed.success) {
-      systems.push(parsed.data);
+      systems.push({
+        ...parsed.data,
+        updatedAt: row.updated_at,
+      });
     }
 
     return systems;

@@ -28,10 +28,13 @@ classDiagram
     string id
     string name
     60 base
+    string units
     GearNode[] gears
     GearConnection[] connections
     string[] drivers
     Viewport viewport
+    string createdAt
+    string updatedAt
   }
 
   class GearNode {

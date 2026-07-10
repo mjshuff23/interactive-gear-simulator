@@ -59,7 +59,7 @@ export function InspectorPanel({
           type="number"
           value={gear.teeth}
           onChange={(event) => {
-            const teeth = parseFiniteNumber(event.target.value);
+            const teeth = parseClampedNumber(event.target.value, 6, 120);
 
             if (teeth === null) {
               return;
@@ -67,7 +67,7 @@ export function InspectorPanel({
 
             onChange({
               teeth,
-              radius: Math.max(28, teeth * 1.9),
+              radius: clampNumber(teeth * 1.9, 28, 160),
             });
           }}
         />
@@ -81,7 +81,7 @@ export function InspectorPanel({
           type="number"
           value={Math.round(gear.radius)}
           onChange={(event) => {
-            const radius = parseFiniteNumber(event.target.value);
+            const radius = parseClampedNumber(event.target.value, 24, 160);
 
             if (radius === null) {
               return;
@@ -102,7 +102,7 @@ export function InspectorPanel({
           type="number"
           value={gear.rpm}
           onChange={(event) => {
-            const rpm = parseFiniteNumber(event.target.value);
+            const rpm = parseClampedNumber(event.target.value, 0, 60);
 
             if (rpm === null) {
               return;
@@ -121,7 +121,7 @@ export function InspectorPanel({
           type="number"
           value={gear.phase}
           onChange={(event) => {
-            const phase = parseFiniteNumber(event.target.value);
+            const phase = parseClampedNumber(event.target.value, 0, 360);
 
             if (phase === null) {
               return;
@@ -183,12 +183,20 @@ export function InspectorPanel({
   );
 }
 
-function parseFiniteNumber(value: string): number | null {
+function parseClampedNumber(
+  value: string,
+  minimum: number,
+  maximum: number,
+): number | null {
   if (value.trim() === "") {
     return null;
   }
 
   const parsed = Number(value);
 
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed) ? clampNumber(parsed, minimum, maximum) : null;
+}
+
+function clampNumber(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
 }

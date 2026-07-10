@@ -50,8 +50,20 @@ export const gearSystemSchema = z
     updatedAt: z.string(),
   })
   .superRefine((system, context) => {
-    const gearIds = new Set(system.gears.map((gear) => gear.id));
+    const gearIds = new Set<string>();
     const driverIds = new Set(system.drivers);
+
+    system.gears.forEach((gear, index) => {
+      if (gearIds.has(gear.id)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate gear id "${gear.id}".`,
+          path: ["gears", index, "id"],
+        });
+      }
+
+      gearIds.add(gear.id);
+    });
 
     system.drivers.forEach((driverId, index) => {
       if (!gearIds.has(driverId)) {

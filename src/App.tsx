@@ -123,21 +123,27 @@ export function App() {
       return;
     }
 
-    const remaining = gearSystem.gears.filter(
-      (gear) => gear.id !== selectedGear.id,
-    );
+    const gearIdToRemove = selectedGear.id;
 
-    setGearSystem((current) => ({
-      ...current,
-      updatedAt: new Date().toISOString(),
-      gears: remaining,
-      connections: current.connections.filter(
-        (connection) =>
-          connection.sourceGearId !== selectedGear.id &&
-          connection.targetGearId !== selectedGear.id,
-      ),
-    }));
-    setSelectedGearId(remaining[0]?.id ?? "");
+    setGearSystem((current) => {
+      const remaining = current.gears.filter(
+        (gear) => gear.id !== gearIdToRemove,
+      );
+
+      return {
+        ...current,
+        updatedAt: new Date().toISOString(),
+        gears: remaining,
+        connections: current.connections.filter(
+          (connection) =>
+            connection.sourceGearId !== gearIdToRemove &&
+            connection.targetGearId !== gearIdToRemove,
+        ),
+      };
+    });
+    setSelectedGearId((currentSelectedGearId) =>
+      currentSelectedGearId === gearIdToRemove ? "" : currentSelectedGearId,
+    );
   }
 
   function moveGear(gearId: string, position: GearNode["position"]) {
@@ -171,16 +177,18 @@ export function App() {
           <CirclePlus size={18} />
         </ToolButton>
         <ToolButton
-          active={activeTool === "connect"}
-          label="Connect"
-          onClick={() => setActiveTool("connect")}
+          active={false}
+          disabled
+          label="Connect (coming soon)"
+          onClick={() => undefined}
         >
           <Link2 size={18} />
         </ToolButton>
         <ToolButton
-          active={activeTool === "pan"}
-          label="Pan"
-          onClick={() => setActiveTool("pan")}
+          active={false}
+          disabled
+          label="Pan (coming soon)"
+          onClick={() => undefined}
         >
           <Hand size={18} />
         </ToolButton>

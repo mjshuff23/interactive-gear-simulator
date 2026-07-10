@@ -3,7 +3,7 @@
 -- The local environment does not currently include the Supabase CLI.
 
 create table if not exists public.gear_systems (
-  id uuid primary key default gen_random_uuid(),
+  id text primary key,
   owner_id uuid not null references auth.users(id) on delete cascade,
   name text not null check (length(trim(name)) > 0),
   definition jsonb not null,
