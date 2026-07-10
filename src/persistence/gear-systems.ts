@@ -7,10 +7,24 @@ export async function saveGearSystem(
   gearSystem: GearSystem,
 ) {
   const definition = gearSystemSchema.parse(gearSystem);
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser();
+
+  if (userError) {
+    throw userError;
+  }
+
+  if (!user) {
+    throw new Error("Cannot save a gear system without an authenticated user.");
+  }
+
   const { data, error } = await client
     .from("gear_systems")
     .upsert({
       id: gearSystem.id,
+      owner_id: user.id,
       name: gearSystem.name,
       definition,
       updated_at: new Date().toISOString(),
@@ -35,5 +49,13 @@ export async function loadGearSystems(client: GearSupabaseClient) {
     throw error;
   }
 
-  return data.map((row) => gearSystemSchema.parse(row.definition));
+  return data.reduce<GearSystem[]>((systems, row) => {
+    const parsed = gearSystemSchema.safeParse(row.definition);
+
+    if (parsed.success) {
+      systems.push(parsed.data);
+    }
+
+    return systems;
+  }, []);
 }

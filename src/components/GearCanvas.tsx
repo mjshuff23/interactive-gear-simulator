@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Application, Container, Graphics, Text } from "pixi.js";
 import type {
   GearNode,
@@ -15,6 +15,19 @@ interface GearCanvasProps {
   solvedSystem: SolvedGearSystem;
 }
 
+interface GearDisplay {
+  body: Graphics;
+  container: Container;
+  label: Text;
+  selectionRing: Graphics;
+}
+
+interface SceneLayers {
+  connections: Graphics;
+  gears: Container;
+  grid: Graphics;
+}
+
 const CANVAS_WIDTH = 820;
 const CANVAS_HEIGHT = 620;
 const GRID_CENTER = { x: 300, y: 300 };
@@ -29,11 +42,73 @@ export function GearCanvas({
 }: GearCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const appRef = useRef<Application | null>(null);
+  const callbacksRef = useRef({ onMoveGear, onSelectGear });
   const dragRef = useRef<string | null>(null);
+  const gearDisplaysRef = useRef<Map<string, GearDisplay>>(new Map());
+  const layersRef = useRef<SceneLayers | null>(null);
+  const activeToolRef = useRef(activeTool);
+  const [isPixiReady, setIsPixiReady] = useState(false);
+
+  const createGearDisplay = useCallback((gearId: string): GearDisplay => {
+    const container = new Container();
+    const body = new Graphics();
+    const label = new Text({
+      text: "",
+      style: {
+        fill: "#f7f2e8",
+        fontFamily: "Inter, ui-sans-serif, system-ui",
+        fontSize: 13,
+        fontWeight: "700",
+      },
+    });
+    const selectionRing = new Graphics();
+
+    label.anchor.set(0.5);
+    container.cursor = "pointer";
+    container.eventMode = "static";
+    container.addChild(body);
+    container.addChild(label);
+    container.addChild(selectionRing);
+    container.on("pointertap", () => {
+      callbacksRef.current.onSelectGear(gearId);
+    });
+    container.on("pointerdown", () => {
+      if (activeToolRef.current === "select") {
+        dragRef.current = gearId;
+      }
+    });
+    container.on("pointerup", () => {
+      dragRef.current = null;
+    });
+    container.on("pointerupoutside", () => {
+      dragRef.current = null;
+    });
+    container.on("globalpointermove", (event) => {
+      if (dragRef.current !== gearId || activeToolRef.current !== "select") {
+        return;
+      }
+
+      callbacksRef.current.onMoveGear(gearId, {
+        x: Math.round(event.global.x),
+        y: Math.round(event.global.y),
+      });
+    });
+
+    return { body, container, label, selectionRing };
+  }, []);
+
+  useEffect(() => {
+    callbacksRef.current = { onMoveGear, onSelectGear };
+  }, [onMoveGear, onSelectGear]);
+
+  useEffect(() => {
+    activeToolRef.current = activeTool;
+  }, [activeTool]);
 
   useEffect(() => {
     let destroyed = false;
     const app = new Application();
+    const gearDisplays = gearDisplaysRef.current;
     appRef.current = app;
 
     async function initPixi() {
@@ -51,69 +126,56 @@ export function GearCanvas({
         return;
       }
 
+      const grid = new Graphics();
+      const connections = new Graphics();
+      const gears = new Container();
+
+      drawBase60Grid(grid);
+      app.stage.addChild(grid);
+      app.stage.addChild(connections);
+      app.stage.addChild(gears);
+      layersRef.current = { connections, gears, grid };
       hostRef.current.appendChild(app.canvas);
+      setIsPixiReady(true);
     }
 
     void initPixi();
 
     return () => {
       destroyed = true;
+      gearDisplays.clear();
+      layersRef.current = null;
       app.destroy(true);
       appRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const app = appRef.current;
-
-    if (!app?.stage) {
+    if (!isPixiReady) {
       return;
     }
 
-    app.stage.removeChildren();
-    drawBase60Grid(app.stage);
-    drawConnections(app.stage, gearSystem);
+    const layers = layersRef.current;
 
-    for (const gear of gearSystem.gears) {
-      const frame = solvedSystem.framesByGear[gear.id];
-      const gearContainer = drawGear(gear, frame?.angleDegrees ?? gear.angle);
-
-      gearContainer.eventMode = activeTool === "pan" ? "none" : "static";
-      gearContainer.cursor = "pointer";
-      gearContainer.on("pointertap", () => onSelectGear(gear.id));
-      gearContainer.on("pointerdown", () => {
-        if (activeTool === "select") {
-          dragRef.current = gear.id;
-        }
-      });
-      gearContainer.on("pointerup", () => {
-        dragRef.current = null;
-      });
-      gearContainer.on("pointerupoutside", () => {
-        dragRef.current = null;
-      });
-      gearContainer.on("globalpointermove", (event) => {
-        if (dragRef.current !== gear.id || activeTool !== "select") {
-          return;
-        }
-
-        onMoveGear(gear.id, {
-          x: Math.round(event.global.x),
-          y: Math.round(event.global.y),
-        });
-      });
-
-      if (gear.id === selectedGearId) {
-        drawSelectionRing(gearContainer, gear.radius + 13);
-      }
-
-      app.stage.addChild(gearContainer);
+    if (!layers) {
+      return;
     }
+
+    drawConnections(layers.connections, gearSystem);
+    syncGearDisplays({
+      activeTool,
+      createGearDisplay,
+      gearSystem,
+      gearDisplays: gearDisplaysRef.current,
+      gearsLayer: layers.gears,
+      selectedGearId,
+      solvedSystem,
+    });
   }, [
     activeTool,
+    createGearDisplay,
     gearSystem,
-    onMoveGear,
-    onSelectGear,
+    isPixiReady,
     selectedGearId,
     solvedSystem,
   ]);
@@ -121,9 +183,55 @@ export function GearCanvas({
   return <div className="gearCanvas" ref={hostRef} />;
 }
 
-function drawBase60Grid(stage: Container) {
-  const grid = new Graphics();
+function syncGearDisplays({
+  activeTool,
+  createGearDisplay,
+  gearDisplays,
+  gearSystem,
+  gearsLayer,
+  selectedGearId,
+  solvedSystem,
+}: {
+  activeTool: GearCanvasProps["activeTool"];
+  createGearDisplay: (gearId: string) => GearDisplay;
+  gearDisplays: Map<string, GearDisplay>;
+  gearSystem: GearSystem;
+  gearsLayer: Container;
+  selectedGearId: string;
+  solvedSystem: SolvedGearSystem;
+}) {
+  const currentGearIds = new Set(gearSystem.gears.map((gear) => gear.id));
 
+  for (const [gearId, display] of gearDisplays) {
+    if (!currentGearIds.has(gearId)) {
+      gearsLayer.removeChild(display.container);
+      display.container.destroy({ children: true });
+      gearDisplays.delete(gearId);
+    }
+  }
+
+  for (const gear of gearSystem.gears) {
+    const frame = solvedSystem.framesByGear[gear.id];
+    let display = gearDisplays.get(gear.id);
+
+    if (!display) {
+      display = createGearDisplay(gear.id);
+      gearDisplays.set(gear.id, display);
+      gearsLayer.addChild(display.container);
+    }
+
+    updateGearDisplay({
+      activeTool,
+      angleDegrees: frame?.angleDegrees ?? gear.angle,
+      display,
+      gear,
+      isSelected: gear.id === selectedGearId,
+    });
+  }
+}
+
+function drawBase60Grid(grid: Graphics) {
+  grid.clear();
   grid.circle(GRID_CENTER.x, GRID_CENTER.y, 250).stroke({
     color: 0x303844,
     width: 1,
@@ -151,13 +259,12 @@ function drawBase60Grid(stage: Container) {
         width: major ? 2 : 1,
       });
   }
-
-  stage.addChild(grid);
 }
 
-function drawConnections(stage: Container, gearSystem: GearSystem) {
+function drawConnections(connections: Graphics, gearSystem: GearSystem) {
   const gearsById = new Map(gearSystem.gears.map((gear) => [gear.id, gear]));
-  const connections = new Graphics();
+
+  connections.clear();
 
   for (const connection of gearSystem.connections) {
     const source = gearsById.get(connection.sourceGearId);
@@ -176,26 +283,34 @@ function drawConnections(stage: Container, gearSystem: GearSystem) {
         alpha: 0.55,
       });
   }
-
-  stage.addChild(connections);
 }
 
-function drawGear(gear: GearNode, angleDegrees: number): Container {
-  const container = new Container();
+function updateGearDisplay({
+  activeTool,
+  angleDegrees,
+  display,
+  gear,
+  isSelected,
+}: {
+  activeTool: GearCanvasProps["activeTool"];
+  angleDegrees: number;
+  display: GearDisplay;
+  gear: GearNode;
+  isSelected: boolean;
+}) {
+  display.container.eventMode = activeTool === "pan" ? "none" : "static";
+  display.container.position.set(gear.position.x, gear.position.y);
+  display.label.text = `${gear.teeth}T`;
+  drawGearBody(display.body, gear, angleDegrees);
+  drawSelectionRing(display.selectionRing, isSelected ? gear.radius + 13 : 0);
+}
+
+function drawGearBody(body: Graphics, gear: GearNode, angleDegrees: number) {
   const color = Number.parseInt(gear.color.replace("#", ""), 16);
   const toothDepth = Math.max(6, Math.min(12, gear.radius * 0.09));
   const angleRadians = (angleDegrees * Math.PI) / 180;
-  const body = new Graphics();
-  const label = new Text({
-    text: `${gear.teeth}T`,
-    style: {
-      fill: "#f7f2e8",
-      fontFamily: "Inter, ui-sans-serif, system-ui",
-      fontSize: 13,
-      fontWeight: "700",
-    },
-  });
 
+  body.clear();
   body.circle(0, 0, gear.radius).fill({ color, alpha: 0.36 });
   body.circle(0, 0, gear.radius).stroke({ color, width: 2 });
   body.circle(0, 0, Math.max(9, gear.radius * 0.14)).fill({
@@ -219,22 +334,18 @@ function drawGear(gear: GearNode, angleDegrees: number): Container {
         alpha: 0.9,
       });
   }
-
-  label.anchor.set(0.5);
-  container.position.set(gear.position.x, gear.position.y);
-  container.addChild(body);
-  container.addChild(label);
-
-  return container;
 }
 
-function drawSelectionRing(container: Container, radius: number) {
-  const ring = new Graphics();
+function drawSelectionRing(selectionRing: Graphics, radius: number) {
+  selectionRing.clear();
 
-  ring.circle(0, 0, radius).stroke({
+  if (radius <= 0) {
+    return;
+  }
+
+  selectionRing.circle(0, 0, radius).stroke({
     color: 0x72d2c6,
     width: 2,
     alpha: 0.95,
   });
-  container.addChild(ring);
 }

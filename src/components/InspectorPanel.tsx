@@ -58,12 +58,18 @@ export function InspectorPanel({
           max={120}
           type="number"
           value={gear.teeth}
-          onChange={(event) =>
+          onChange={(event) => {
+            const teeth = parseFiniteNumber(event.target.value);
+
+            if (teeth === null) {
+              return;
+            }
+
             onChange({
-              teeth: Number(event.target.value),
-              radius: Math.max(28, Number(event.target.value) * 1.9),
-            })
-          }
+              teeth,
+              radius: Math.max(28, teeth * 1.9),
+            });
+          }}
         />
       </label>
 
@@ -74,7 +80,15 @@ export function InspectorPanel({
           max={160}
           type="number"
           value={Math.round(gear.radius)}
-          onChange={(event) => onChange({ radius: Number(event.target.value) })}
+          onChange={(event) => {
+            const radius = parseFiniteNumber(event.target.value);
+
+            if (radius === null) {
+              return;
+            }
+
+            onChange({ radius });
+          }}
         />
       </label>
 
@@ -87,7 +101,15 @@ export function InspectorPanel({
           step={0.25}
           type="number"
           value={gear.rpm}
-          onChange={(event) => onChange({ rpm: Number(event.target.value) })}
+          onChange={(event) => {
+            const rpm = parseFiniteNumber(event.target.value);
+
+            if (rpm === null) {
+              return;
+            }
+
+            onChange({ rpm });
+          }}
         />
       </label>
 
@@ -98,7 +120,15 @@ export function InspectorPanel({
           min={0}
           type="number"
           value={gear.phase}
-          onChange={(event) => onChange({ phase: Number(event.target.value) })}
+          onChange={(event) => {
+            const phase = parseFiniteNumber(event.target.value);
+
+            if (phase === null) {
+              return;
+            }
+
+            onChange({ phase });
+          }}
         />
       </label>
 
@@ -151,4 +181,14 @@ export function InspectorPanel({
       </div>
     </section>
   );
+}
+
+function parseFiniteNumber(value: string): number | null {
+  if (value.trim() === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  return Number.isFinite(parsed) ? parsed : null;
 }

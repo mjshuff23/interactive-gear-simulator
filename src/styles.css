@@ -146,6 +146,12 @@ select {
   background: #1b2129;
 }
 
+.primaryButton:disabled,
+.ghostButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .canvasPanel {
   position: relative;
   overflow: hidden;

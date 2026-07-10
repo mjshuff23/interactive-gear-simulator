@@ -1,4 +1,4 @@
-## Goal
+# Goal
 
 Keep the app verifiable as the simulator becomes more interactive.
 

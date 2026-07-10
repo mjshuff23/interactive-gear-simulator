@@ -15,7 +15,7 @@ from metaphor.
 - Recharts for live waveform/ratio visualizations
 - Supabase client boundary for future auth and saved systems
 - Vitest for deterministic simulation tests
-- Playwright planned for browser workflow coverage
+- Playwright for browser smoke coverage
 
 ## Scripts
 
@@ -23,8 +23,10 @@ from metaphor.
 pnpm install
 pnpm dev
 pnpm typecheck
+pnpm lint
 pnpm test
 pnpm build
+pnpm test:e2e
 ```
 
 ## Project Map

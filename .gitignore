@@ -5,6 +5,7 @@ test-results/
 playwright-report/
 .env
 .env.local
+.env.*.local
 .DS_Store
 *.tsbuildinfo
 node_modules/.tmp/

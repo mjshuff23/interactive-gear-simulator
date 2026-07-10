@@ -68,7 +68,7 @@ classDiagram
 
   GearSystem "1" --> "*" GearNode
   GearSystem "1" --> "*" GearConnection
-  GearNode "1" --> "*" SimulationFrame
+  GearNode "1" --> "1" SimulationFrame
 ```
 
 ## Simulation Loop

@@ -134,4 +134,8 @@ describe("solveGearSystem", () => {
   it("formats degrees as a base-60 degree-minute-second readout", () => {
     expect(formatSexagesimalAngle(43.2)).toBe("43 deg 12' 00\"");
   });
+
+  it("wraps rounded sexagesimal angles at a full rotation boundary", () => {
+    expect(formatSexagesimalAngle(359.9999)).toBe("0 deg 00' 00\"");
+  });
 });

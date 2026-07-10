@@ -12,6 +12,46 @@ create table if not exists public.gear_systems (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.set_gear_system_owner_id()
+returns trigger
+language plpgsql
+security invoker
+as $$
+begin
+  if new.owner_id is null then
+    new.owner_id := auth.uid();
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists set_gear_system_owner_id on public.gear_systems;
+
+create trigger set_gear_system_owner_id
+before insert on public.gear_systems
+for each row
+execute function public.set_gear_system_owner_id();
+
+create or replace function public.set_gear_system_updated_at()
+returns trigger
+language plpgsql
+security invoker
+as $$
+begin
+  new.updated_at := now();
+
+  return new;
+end;
+$$;
+
+drop trigger if exists set_gear_system_updated_at on public.gear_systems;
+
+create trigger set_gear_system_updated_at
+before update on public.gear_systems
+for each row
+execute function public.set_gear_system_updated_at();
+
 create index if not exists gear_systems_owner_updated_idx
 on public.gear_systems (owner_id, updated_at desc);
 

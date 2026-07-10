@@ -71,6 +71,8 @@ interface PropagatedMotion {
 
 const DEGREES_PER_ROTATION = 360;
 const SECONDS_PER_MINUTE = 60;
+const ARC_SECONDS_PER_ROTATION =
+  DEGREES_PER_ROTATION * SECONDS_PER_MINUTE * SECONDS_PER_MINUTE;
 
 export function solveGearSystem(
   system: GearSystem,
@@ -158,7 +160,9 @@ export function solveGearSystem(
 
 export function formatSexagesimalAngle(angleDegrees: number): string {
   const normalized = normalizeDegrees(angleDegrees);
-  const totalSeconds = Math.round(normalized * 60 * 60);
+  const totalSeconds =
+    Math.round(normalized * SECONDS_PER_MINUTE * SECONDS_PER_MINUTE) %
+    ARC_SECONDS_PER_ROTATION;
   const degrees = Math.floor(totalSeconds / (60 * 60));
   const remainingAfterDegrees = totalSeconds - degrees * 60 * 60;
   const minutes = Math.floor(remainingAfterDegrees / 60);

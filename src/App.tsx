@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CirclePlus,
   Hand,
@@ -33,14 +33,27 @@ export function App() {
   const [activeTool, setActiveTool] = useState<
     "select" | "gear" | "connect" | "pan"
   >("select");
+  const elapsedSecondsRef = useRef(elapsedSeconds);
+  const nextGeneratedGearIndexRef = useRef(
+    getNextGeneratedGearIndex(gearSystem.gears),
+  );
+
+  useEffect(() => {
+    elapsedSecondsRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
 
   useEffect(() => {
     if (!isPlaying) {
       return;
     }
 
+    const startTime = performance.now();
+    const startElapsedSeconds = elapsedSecondsRef.current;
+
     const timerId = window.setInterval(() => {
-      setElapsedSeconds((current) => current + SIMULATION_STEP_SECONDS);
+      const elapsedSinceStart = (performance.now() - startTime) / 1000;
+
+      setElapsedSeconds(startElapsedSeconds + elapsedSinceStart);
     }, SIMULATION_STEP_SECONDS * 1000);
 
     return () => window.clearInterval(timerId);
@@ -74,7 +87,9 @@ export function App() {
   }
 
   function addGear() {
-    const nextIndex = gearSystem.gears.length + 1;
+    const nextIndex = nextGeneratedGearIndexRef.current;
+    nextGeneratedGearIndexRef.current += 1;
+
     const id = `gear-${nextIndex}`;
     const teeth = 15;
     const radius = 42;
@@ -189,7 +204,12 @@ export function App() {
             </p>
           </div>
           <div className="topBarActions">
-            <button className="ghostButton" type="button">
+            <button
+              className="ghostButton"
+              disabled
+              title="Saving is unavailable until Supabase auth is connected."
+              type="button"
+            >
               <Save size={16} />
               Save System
             </button>
@@ -238,6 +258,16 @@ export function App() {
         />
       </aside>
     </main>
+  );
+}
+
+function getNextGeneratedGearIndex(gears: GearNode[]): number {
+  return (
+    gears.reduce((highestIndex, gear) => {
+      const match = /^gear-(\d+)$/.exec(gear.id);
+
+      return match ? Math.max(highestIndex, Number(match[1])) : highestIndex;
+    }, 0) + 1
   );
 }
 

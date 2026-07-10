@@ -1,4 +1,4 @@
-## Goal
+# Goal
 
 Add Supabase-backed saved gear systems using TypeScript client code and secure Postgres RLS.
 

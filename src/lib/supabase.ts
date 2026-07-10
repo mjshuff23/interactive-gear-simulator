@@ -15,7 +15,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          owner_id?: string;
+          owner_id: string;
           name: string;
           definition: unknown;
           thumbnail_url?: string | null;
