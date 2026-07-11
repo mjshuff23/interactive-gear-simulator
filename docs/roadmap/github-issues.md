@@ -18,6 +18,10 @@ Created for `mjshuff23/interactive-gear-simulator` on 2026-07-07.
 - [#6 M2: Add base-60 learning visualizations](https://github.com/mjshuff23/interactive-gear-simulator/issues/6)
 - [#8 M2: Add guided starter systems and examples](https://github.com/mjshuff23/interactive-gear-simulator/issues/8)
 
+## M2.5 Geometric Meshing
+
+- [#13 M2.5: Enforce geometric gear meshing, jam detection, and tooth alignment](https://github.com/mjshuff23/interactive-gear-simulator/issues/13)
+
 ## M3 Persistence
 
 - [#10 M3: Add Supabase auth and saved gear systems](https://github.com/mjshuff23/interactive-gear-simulator/issues/10)
