@@ -1,0 +1,20 @@
+src/components/InspectorPanel.tsx
+  s_f9271192d339ea::t_c569c3b839a707 141-178
+  s_f9271192d339ea::t_5c8f8a32040873 91-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "0153f9116ed7177959b617b3f35f46104e584588",
+  "prompts": {},
+  "sessions": {
+    "s_f9271192d339ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "913a9c1a-1913-4367-9386-36920053fe36",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
