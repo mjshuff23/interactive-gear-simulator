@@ -1,0 +1,21 @@
+src/data/guided-examples.ts
+  s_94f453708ff147::t_545c81a3ce30e9 399
+src/App.tsx
+  s_94f453708ff147::t_488bfbd6b4f475 123-130
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "759efc3836295e3f1432ee6e6032155100dd19a8",
+  "prompts": {},
+  "sessions": {
+    "s_94f453708ff147": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8058443b-d6ec-4fd9-b711-fd6f573dbdf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
