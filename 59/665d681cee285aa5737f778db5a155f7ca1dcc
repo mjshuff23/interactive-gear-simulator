@@ -1,0 +1,52 @@
+src/App.tsx
+  s_94f453708ff147::t_1b2f7e3e4bcbff 13-14,17-21
+  s_94f453708ff147::t_11c657a82dcc2a 33-35,37-40,47,52-82
+  s_94f453708ff147::t_4304d693816a05 192
+  s_94f453708ff147::t_ca048fb9e15b8d 130
+  s_94f453708ff147::t_3746d8eeb80073 203
+  s_94f453708ff147::t_60ea7a9bdc2692 286-287
+  s_94f453708ff147::t_6682df7e3020b1 262-265
+  s_94f453708ff147::t_1e40e95e20298b 163
+src/persistence/gear-systems.test.ts
+  s_94f453708ff147::t_bce9063e7d8e6d 3
+  s_94f453708ff147::t_297c07d3b12fd3 36,39,41
+  s_94f453708ff147::t_6ac09201f903cd 24-25
+  s_94f453708ff147::t_1fc6e4e98d0518 47
+src/data/guided-examples.ts
+  s_94f453708ff147::t_7b85b598968638 1-453
+  s_94f453708ff147::t_57e6c04e77e4f5 454-455
+.prettierignore
+  s_94f453708ff147::t_bcb2bddbca6ba7 7
+src/data/guided-examples.test.ts
+  s_94f453708ff147::t_a89030ae11f206 1-236
+  s_94f453708ff147::t_1e2599e2ff1122 237-238
+src/components/GuidedExampleSelector.tsx
+  s_94f453708ff147::t_daefe7e80fd66b 1-38
+tests/e2e/guided-examples.spec.ts
+  s_94f453708ff147::t_59289a398c0c7b 1-60
+  s_94f453708ff147::t_1e0fabb4b4fa4c 61-63
+  s_94f453708ff147::t_fd567e5adc5c54 64-69
+src/components/GuidedExampleExplanation.tsx
+  s_94f453708ff147::t_ef311d882c818d 1-26
+src/schema/gear-system-schema.test.ts
+  s_94f453708ff147::t_b9ef52fe34673c 2,7
+src/styles.css
+  s_94f453708ff147::t_6108b8d5393855 92
+  s_94f453708ff147::t_3d3196326c2518 156-212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "59665d681cee285aa5737f778db5a155f7ca1dcc",
+  "prompts": {},
+  "sessions": {
+    "s_94f453708ff147": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8058443b-d6ec-4fd9-b711-fd6f573dbdf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
