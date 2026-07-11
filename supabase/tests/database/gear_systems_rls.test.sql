@@ -123,8 +123,10 @@ select results_eq(
 );
 
 -- Cascade delete test
-select tests.clear_authentication();
--- Need to bypass RLS to delete the user
+-- Need to bypass RLS to delete the user, so reset to the superuser role
+-- rather than clear_authentication() (which switches to the unprivileged
+-- anon role and cannot touch auth.users).
+reset role;
 delete from auth.users where email = 'user1@supabase.io';
 
 -- Check if rows are deleted (as admin/bypass)
