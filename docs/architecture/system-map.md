@@ -10,7 +10,9 @@ renders the gear field; Supabase stores authenticated gear systems.
 flowchart LR
   User[User] --> Shell[React App Shell]
   Shell --> Store[Editor State]
-  Store --> Engine[TypeScript Gear Solver]
+  Store --> Geometry[Pure Pitch Geometry + Validation]
+  Geometry --> Engine[TypeScript Constraint Solver]
+  Geometry --> Canvas[PixiJS Gear Canvas]
   Engine --> Frames[Simulation Frames]
   Frames --> Canvas[PixiJS Gear Canvas]
   Frames --> Viz[Ratio + Waveform Panels]
@@ -42,7 +44,6 @@ classDiagram
     string label
     number teeth
     number module
-    number radius
     Point position
     number angle
     number phase
@@ -58,7 +59,6 @@ classDiagram
     string sourceGearId
     string targetGearId
     ConnectionKind kind
-    number ratio
     number phaseOffset
   }
 
@@ -67,6 +67,7 @@ classDiagram
     number rpm
     RotationDirection direction
     number angleDegrees
+    number toothAngleDegrees
   }
 
   GearSystem "1" --> "*" GearNode
@@ -77,22 +78,40 @@ classDiagram
 `GearSystem.base` is fixed at `60` in v1 (the schema declares it as a literal);
 it drives the base-60 degree-minute-second angle readouts.
 
+`teeth` and `module` are the canonical pitch-size fields. Pitch radius is
+derived as `module * teeth / 2`, and mesh speed ratio is derived from endpoint
+tooth counts. Neither value is serialized redundantly. `phaseOffset` remains a
+stored mounting relationship because it depends on connection geometry.
+
 ## Simulation Loop
 
 ```mermaid
 sequenceDiagram
   participant U as User
   participant R as React State
+  participant G as Geometry Validator
   participant E as Gear Solver
   participant C as Pixi Canvas
   participant V as Visualizations
 
   U->>R: edit gear, add gear, drag gear, play/pause
-  R->>E: solveGearSystem(system, elapsedSeconds)
+  R->>G: validateConnections(system)
+  G-->>R: per-link validity + jammed components
+  R->>E: solveGearSystem(system, elapsedSeconds, validation)
   E-->>R: framesByGear
-  R->>C: render gears, teeth, radial grid
+  R->>C: render frames + the same validation result
   R->>V: update ratio, angle, waveform
 ```
+
+React memoizes validation by `GearSystem`. Invalid links and jammed components
+cannot transmit motion, while disconnected unreachable gears resolve to zero
+RPM at their base angle. `angleDegrees` remains the logical lesson/readout
+angle; `toothAngleDegrees` is the phase-aligned Pixi tooth-mark orientation.
+
+Dragging translates the full transitive compound component. Drop finalization
+may snap that group to one existing, module-compatible mesh and then refreshes
+phase offsets for every valid incident mesh. Validation itself is derived data:
+it is not persisted and does not change timestamps or editor dirty state.
 
 ## Persistence Flow
 
@@ -111,9 +130,15 @@ sequenceDiagram
   P-->>R: id, name, updated_at
 ```
 
+The nested gear and connection schemas are strict. Persisted definitions with
+legacy derived `radius` or `ratio` keys are rejected; no compatibility layer is
+needed before saved production systems exist.
+
 ## Design Rules
 
 - Keep simulator math deterministic and testable outside React.
+- Treat this model as external spur-gear pitch geometry in canvas units, not a
+  manufacturability, collision, torque, or force simulation.
 - Keep browser code TypeScript-only.
 - Do not add a Python backend for v1.
 - Use Supabase publishable keys in the browser; never expose service role keys.

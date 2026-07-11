@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { gearSystemSchema } from "../schema/gear-system-schema";
+import {
+  calculateMeshPhaseOffset,
+  pitchRadius,
+  validateConnections,
+} from "../simulation/gear-geometry";
 import { solveGearSystem } from "../simulation/gear-system";
 import {
   GUIDED_EXAMPLES,
@@ -79,28 +84,16 @@ describe("guided example registry", () => {
       );
     });
 
-    it("stores mesh ratios equal to source teeth over target teeth", () => {
+    it("does not persist derived radius or ratio fields", () => {
       const system = example.createSystem();
-      const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
 
-      for (const connection of system.connections) {
-        if (connection.kind !== "mesh") {
-          continue;
-        }
-
-        const source = gearsById.get(connection.sourceGearId);
-        const target = gearsById.get(connection.targetGearId);
-
-        expect(source).toBeDefined();
-        expect(target).toBeDefined();
-        expect(connection.ratio).toBeCloseTo(
-          (source?.teeth ?? Number.NaN) / (target?.teeth ?? Number.NaN),
-          10,
-        );
-      }
+      expect(system.gears.every((gear) => !("radius" in gear))).toBe(true);
+      expect(
+        system.connections.every((connection) => !("ratio" in connection)),
+      ).toBe(true);
     });
 
-    it("stores compound ratios of 1 with shared axle positions", () => {
+    it("stores compound gears at shared axle positions", () => {
       const system = example.createSystem();
       const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
 
@@ -112,7 +105,6 @@ describe("guided example registry", () => {
         const source = gearsById.get(connection.sourceGearId);
         const target = gearsById.get(connection.targetGearId);
 
-        expect(connection.ratio).toBe(1);
         expect(target?.position).toEqual(source?.position);
       }
     });
@@ -140,7 +132,32 @@ describe("guided example registry", () => {
           source.position.y - target.position.y,
         );
 
-        expect(centerDistance).toBeCloseTo(source.radius + target.radius, 6);
+        expect(centerDistance).toBeCloseTo(
+          pitchRadius(source) + pitchRadius(target),
+          6,
+        );
+      }
+    });
+
+    it("stores mesh phase offsets calculated from initial geometry", () => {
+      const system = example.createSystem();
+      const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
+
+      for (const connection of system.connections) {
+        if (connection.kind !== "mesh") {
+          continue;
+        }
+
+        const source = gearsById.get(connection.sourceGearId);
+        const target = gearsById.get(connection.targetGearId);
+
+        if (!source || !target) {
+          throw new Error(`Dangling connection ${connection.id}`);
+        }
+
+        expect(connection.phaseOffset).toBe(
+          calculateMeshPhaseOffset(source, target),
+        );
       }
     });
 
@@ -148,14 +165,24 @@ describe("guided example registry", () => {
       const system = example.createSystem();
 
       for (const gear of system.gears) {
-        expect(gear.radius).toBeCloseTo((gear.module * gear.teeth) / 2, 10);
-        expect(gear.position.x - gear.radius).toBeGreaterThanOrEqual(0);
-        expect(gear.position.x + gear.radius).toBeLessThanOrEqual(CANVAS_WIDTH);
-        expect(gear.position.y - gear.radius).toBeGreaterThanOrEqual(0);
-        expect(gear.position.y + gear.radius).toBeLessThanOrEqual(
-          CANVAS_HEIGHT,
-        );
+        const radius = pitchRadius(gear);
+
+        expect(gear.position.x - radius).toBeGreaterThanOrEqual(0);
+        expect(gear.position.x + radius).toBeLessThanOrEqual(CANVAS_WIDTH);
+        expect(gear.position.y - radius).toBeGreaterThanOrEqual(0);
+        expect(gear.position.y + radius).toBeLessThanOrEqual(CANVAS_HEIGHT);
       }
+    });
+
+    it("loads with every connection pitch-geometry valid and unjammed", () => {
+      const validation = validateConnections(example.createSystem());
+
+      expect(
+        Object.values(validation.byConnectionId).every(
+          (connection) => connection.isGeometricallyValid,
+        ),
+      ).toBe(true);
+      expect(validation.jammedComponents).toEqual([]);
     });
 
     it("respects the maximum gear and connection counts", () => {
@@ -234,5 +261,27 @@ describe("fraction-angle math", () => {
     const driver = solved.framesByGear["tick-60"]?.rpm ?? Number.NaN;
 
     expect(solved.framesByGear["fifth-12"]?.rpm).toBeCloseTo(driver * 5, 10);
+  });
+
+  it("keeps logical lesson angles separate from phase-aligned tooth marks", () => {
+    const system = getGuidedExample("fraction-angle").createSystem();
+    const atStart = solveGearSystem(system, 0);
+    const later = solveGearSystem(system, 1.5);
+
+    expect(atStart.framesByGear["fifth-12"]?.angleDegrees).toBeCloseTo(72, 10);
+    expect(atStart.framesByGear["tick-60"]?.toothAngleDegrees).toBeCloseTo(
+      0,
+      10,
+    );
+    expect(atStart.framesByGear["fifth-12"]?.toothAngleDegrees).toBeCloseTo(
+      165,
+      10,
+    );
+    expect(later.framesByGear["tick-60"]?.toothAngleDegrees).toBeCloseTo(9, 10);
+    expect(later.framesByGear["fifth-12"]?.toothAngleDegrees).toBeCloseTo(
+      120,
+      10,
+    );
+    expect(later.framesByGear["fifth-12"]?.angleDegrees).toBeCloseTo(27, 10);
   });
 });

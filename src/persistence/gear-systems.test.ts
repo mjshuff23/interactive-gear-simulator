@@ -79,4 +79,36 @@ describe("gear system persistence", () => {
     expect(systems[0].id).toBe(validSystem.id);
     expect(systems[0].updatedAt).toBe(rowUpdatedAt);
   });
+
+  it("skips legacy definitions with persisted derived geometry", async () => {
+    const validSystem = DEFAULT_GUIDED_EXAMPLE.createSystem();
+    const legacySystem = {
+      ...validSystem,
+      gears: validSystem.gears.map((gear, index) =>
+        index === 0 ? { ...gear, radius: 60 } : gear,
+      ),
+      connections: validSystem.connections.map((connection, index) =>
+        index === 0 ? { ...connection, ratio: 3 } : connection,
+      ),
+    };
+    const client = {
+      from: () => ({
+        select: () => ({
+          order: async () => ({
+            data: [
+              {
+                id: legacySystem.id,
+                name: legacySystem.name,
+                definition: legacySystem,
+                updated_at: legacySystem.updatedAt,
+              },
+            ],
+            error: null,
+          }),
+        }),
+      }),
+    } as unknown as GearSupabaseClient;
+
+    await expect(loadGearSystems(client)).resolves.toEqual([]);
+  });
 });

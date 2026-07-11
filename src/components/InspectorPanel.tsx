@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { pitchRadius } from "../simulation/gear-geometry";
 
 import type {
   GearNode,
@@ -59,22 +60,13 @@ export function InspectorPanel({
         max={120}
         min={6}
         value={gear.teeth}
-        onCommit={(teeth) =>
-          onChange({
-            teeth,
-            radius: clampNumber(teeth * 1.9, 28, 160),
-          })
-        }
+        onCommit={(teeth) => onChange({ teeth })}
       />
 
-      <NumericField
-        key={`${gear.id}-radius`}
-        label="Radius"
-        max={160}
-        min={24}
-        value={Math.round(gear.radius)}
-        onCommit={(radius) => onChange({ radius })}
-      />
+      <div className="field derivedField">
+        <span>Pitch radius</span>
+        <output>{pitchRadius(gear).toFixed(2)} px</output>
+      </div>
 
       <NumericField
         key={`${gear.id}-rpm`}

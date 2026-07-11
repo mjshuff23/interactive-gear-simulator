@@ -1,3 +1,9 @@
+import {
+  meshRatio,
+  validateConnections,
+  type ConnectionValidationResult,
+} from "./gear-geometry";
+
 export type RotationDirection = "clockwise" | "counterclockwise";
 
 export type ConnectionKind = "mesh" | "compound";
@@ -18,7 +24,6 @@ export interface GearNode {
   label: string;
   teeth: number;
   module: number;
-  radius: number;
   position: Point;
   angle: number;
   phase: number;
@@ -34,7 +39,6 @@ export interface GearConnection {
   sourceGearId: string;
   targetGearId: string;
   kind: ConnectionKind;
-  ratio: number;
   phaseOffset: number;
 }
 
@@ -56,6 +60,7 @@ export interface SimulationFrame {
   rpm: number;
   direction: RotationDirection;
   angleDegrees: number;
+  toothAngleDegrees: number;
 }
 
 export interface SolvedGearSystem {
@@ -66,7 +71,13 @@ export interface SolvedGearSystem {
 interface PropagatedMotion {
   rpm: number;
   direction: RotationDirection;
-  phaseReference: number;
+  toothPhaseReference: number;
+}
+
+interface MotionEdge {
+  connection: GearConnection;
+  targetGearId: string;
+  traversesForward: boolean;
 }
 
 const DEGREES_PER_ROTATION = 360;
@@ -77,10 +88,43 @@ const ARC_SECONDS_PER_ROTATION =
 export function solveGearSystem(
   system: GearSystem,
   elapsedSeconds: number,
+  validation: ConnectionValidationResult = validateConnections(system),
 ): SolvedGearSystem {
   const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
   const motions = new Map<string, PropagatedMotion>();
+  const jammedGearIds = new Set(
+    validation.jammedComponents.flatMap((component) => component.gearIds),
+  );
+  const adjacency = new Map<string, MotionEdge[]>();
   const queue: string[] = [];
+
+  for (const gear of system.gears) {
+    adjacency.set(gear.id, []);
+  }
+
+  for (const connection of system.connections) {
+    if (!validation.byConnectionId[connection.id]?.isGeometricallyValid) {
+      continue;
+    }
+
+    if (
+      jammedGearIds.has(connection.sourceGearId) ||
+      jammedGearIds.has(connection.targetGearId)
+    ) {
+      continue;
+    }
+
+    adjacency.get(connection.sourceGearId)?.push({
+      connection,
+      targetGearId: connection.targetGearId,
+      traversesForward: true,
+    });
+    adjacency.get(connection.targetGearId)?.push({
+      connection,
+      targetGearId: connection.sourceGearId,
+      traversesForward: false,
+    });
+  }
 
   for (const driverId of system.drivers) {
     const driver = gearsById.get(driverId);
@@ -89,10 +133,14 @@ export function solveGearSystem(
       throw new Error(`Driver gear "${driverId}" does not exist.`);
     }
 
+    if (jammedGearIds.has(driver.id)) {
+      continue;
+    }
+
     motions.set(driver.id, {
       rpm: driver.rpm,
       direction: driver.direction,
-      phaseReference: driver.angle + driver.phase,
+      toothPhaseReference: driver.angle + driver.phase,
     });
     queue.push(driver.id);
   }
@@ -111,21 +159,17 @@ export function solveGearSystem(
       continue;
     }
 
-    const outbound = system.connections.filter(
-      (connection) => connection.sourceGearId === sourceId,
-    );
-
-    for (const connection of outbound) {
-      const targetGear = gearsById.get(connection.targetGearId);
+    for (const edge of adjacency.get(sourceId) ?? []) {
+      const targetGear = gearsById.get(edge.targetGearId);
 
       if (!targetGear || motions.has(targetGear.id)) {
         continue;
       }
 
       const targetMotion =
-        connection.kind === "compound"
-          ? solveCompoundMotion(sourceMotion, connection)
-          : solveMeshMotion(sourceGear, targetGear, sourceMotion, connection);
+        edge.connection.kind === "compound"
+          ? solveCompoundMotion(sourceMotion, edge)
+          : solveMeshMotion(sourceGear, targetGear, sourceMotion, edge);
 
       motions.set(targetGear.id, targetMotion);
       queue.push(targetGear.id);
@@ -137,16 +181,22 @@ export function solveGearSystem(
     framesByGear: Object.fromEntries(
       system.gears.map((gear) => {
         const motion = motions.get(gear.id) ?? {
-          rpm: gear.rpm,
+          rpm: 0,
           direction: gear.direction,
-          phaseReference: gear.angle + gear.phase,
+          toothPhaseReference: gear.angle + gear.phase,
         };
         const frame: SimulationFrame = {
           gearId: gear.id,
           rpm: motion.rpm,
           direction: motion.direction,
           angleDegrees: normalizeDegrees(
-            motion.phaseReference +
+            gear.angle +
+              gear.phase +
+              signedDegreesPerSecond(motion.rpm, motion.direction) *
+                elapsedSeconds,
+          ),
+          toothAngleDegrees: normalizeDegrees(
+            motion.toothPhaseReference +
               signedDegreesPerSecond(motion.rpm, motion.direction) *
                 elapsedSeconds,
           ),
@@ -182,12 +232,16 @@ export function normalizeDegrees(angleDegrees: number): number {
 
 function solveCompoundMotion(
   sourceMotion: PropagatedMotion,
-  connection: GearConnection,
+  edge: MotionEdge,
 ): PropagatedMotion {
   return {
     rpm: sourceMotion.rpm,
     direction: sourceMotion.direction,
-    phaseReference: sourceMotion.phaseReference + connection.phaseOffset,
+    toothPhaseReference:
+      sourceMotion.toothPhaseReference +
+      (edge.traversesForward
+        ? edge.connection.phaseOffset
+        : -edge.connection.phaseOffset),
   };
 }
 
@@ -195,18 +249,19 @@ function solveMeshMotion(
   sourceGear: GearNode,
   targetGear: GearNode,
   sourceMotion: PropagatedMotion,
-  connection: GearConnection,
+  edge: MotionEdge,
 ): PropagatedMotion {
-  const toothRatio =
-    connection.ratio > 0
-      ? connection.ratio
-      : sourceGear.teeth / targetGear.teeth;
+  const toothRatio = meshRatio(sourceGear, targetGear);
+  const toothPhaseReference = edge.traversesForward
+    ? edge.connection.phaseOffset -
+      toothRatio * sourceMotion.toothPhaseReference
+    : (edge.connection.phaseOffset - sourceMotion.toothPhaseReference) /
+      meshRatio(targetGear, sourceGear);
 
   return {
     rpm: sourceMotion.rpm * toothRatio,
     direction: oppositeDirection(sourceMotion.direction),
-    phaseReference:
-      targetGear.angle + targetGear.phase + connection.phaseOffset,
+    toothPhaseReference,
   };
 }
 

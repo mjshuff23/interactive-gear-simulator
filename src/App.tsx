@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { GearCanvas } from "./components/GearCanvas";
+import { ConnectionStatus } from "./components/ConnectionStatus";
 import { GuidedExampleExplanation } from "./components/GuidedExampleExplanation";
 import { GuidedExampleSelector } from "./components/GuidedExampleSelector";
 import { InspectorPanel } from "./components/InspectorPanel";
@@ -19,6 +20,11 @@ import {
   getGuidedExample,
   type GuidedExampleId,
 } from "./data/guided-examples";
+import {
+  moveCompoundComponent,
+  snapCompoundComponentToMesh,
+  validateConnections,
+} from "./simulation/gear-geometry";
 import {
   formatSexagesimalAngle,
   solveGearSystem,
@@ -45,6 +51,7 @@ export function App() {
     "select" | "gear" | "connect" | "pan"
   >("select");
   const [isDirty, setIsDirty] = useState(false);
+  const gearSystemRef = useRef(gearSystem);
   const elapsedSecondsRef = useRef(elapsedSeconds);
   const nextGeneratedGearIndexRef = useRef(
     getNextGeneratedGearIndex(gearSystem.gears),
@@ -70,6 +77,7 @@ export function App() {
 
     setActiveExampleId(example.id);
     setGearSystem(system);
+    gearSystemRef.current = system;
     setSelectedGearId(example.defaultSelectedGearId);
     setIsPlaying(false);
     setElapsedSeconds(0);
@@ -102,9 +110,13 @@ export function App() {
     return () => window.clearInterval(timerId);
   }, [isPlaying]);
 
+  const connectionValidation = useMemo(
+    () => validateConnections(gearSystem),
+    [gearSystem],
+  );
   const solvedSystem = useMemo(
-    () => solveGearSystem(gearSystem, elapsedSeconds),
-    [elapsedSeconds, gearSystem],
+    () => solveGearSystem(gearSystem, elapsedSeconds, connectionValidation),
+    [connectionValidation, elapsedSeconds, gearSystem],
   );
 
   const selectedGear =
@@ -120,22 +132,26 @@ export function App() {
       return;
     }
 
-    const hasChanges = Object.entries(updates).some(
-      ([key, value]) => !Object.is(selectedGear[key as keyof GearNode], value),
-    );
+    applyGearSystemEdit((current) => {
+      const currentGear = current.gears.find(
+        (gear) => gear.id === selectedGear.id,
+      );
+      const hasChanges =
+        currentGear !== undefined &&
+        Object.entries(updates).some(
+          ([key, value]) =>
+            !Object.is(currentGear[key as keyof GearNode], value),
+        );
 
-    if (!hasChanges) {
-      return;
-    }
-
-    setGearSystem((current) => ({
-      ...current,
-      updatedAt: new Date().toISOString(),
-      gears: current.gears.map((gear) =>
-        gear.id === selectedGear.id ? { ...gear, ...updates } : gear,
-      ),
-    }));
-    setIsDirty(true);
+      return hasChanges
+        ? {
+            ...current,
+            gears: current.gears.map((gear) =>
+              gear.id === selectedGear.id ? { ...gear, ...updates } : gear,
+            ),
+          }
+        : current;
+    });
   }
 
   function addGear() {
@@ -144,13 +160,11 @@ export function App() {
 
     const id = `gear-${nextIndex}`;
     const teeth = 15;
-    const radius = 42;
     const gear: GearNode = {
       id,
       label: `${teeth}T gear`,
       teeth,
       module: 4,
-      radius,
       position: { x: 520, y: 180 + nextIndex * 18 },
       angle: 0,
       phase: 0,
@@ -161,14 +175,12 @@ export function App() {
       color: "#72d2c6",
     };
 
-    setGearSystem((current) => ({
+    applyGearSystemEdit((current) => ({
       ...current,
-      updatedAt: new Date().toISOString(),
       gears: [...current.gears, gear],
     }));
     setSelectedGearId(id);
     setActiveTool("select");
-    setIsDirty(true);
   }
 
   function removeSelectedGear() {
@@ -178,14 +190,13 @@ export function App() {
 
     const gearIdToRemove = selectedGear.id;
 
-    setGearSystem((current) => {
+    applyGearSystemEdit((current) => {
       const remaining = current.gears.filter(
         (gear) => gear.id !== gearIdToRemove,
       );
 
       return {
         ...current,
-        updatedAt: new Date().toISOString(),
         gears: remaining,
         connections: current.connections.filter(
           (connection) =>
@@ -197,22 +208,39 @@ export function App() {
     setSelectedGearId((currentSelectedGearId) =>
       currentSelectedGearId === gearIdToRemove ? "" : currentSelectedGearId,
     );
-    setIsDirty(true);
   }
 
   function moveGear(gearId: string, position: GearNode["position"]) {
-    setGearSystem((current) => ({
-      ...current,
-      updatedAt: new Date().toISOString(),
-      gears: current.gears.map((gear) =>
-        gear.id === gearId ? { ...gear, position } : gear,
-      ),
-    }));
-    setIsDirty(true);
+    applyGearSystemEdit((current) =>
+      moveCompoundComponent(current, gearId, position),
+    );
+  }
+
+  function finishMoveGear(gearId: string) {
+    applyGearSystemEdit((current) =>
+      snapCompoundComponentToMesh(current, gearId),
+    );
   }
 
   function setDirection(direction: RotationDirection) {
     updateSelectedGear({ direction });
+  }
+
+  function applyGearSystemEdit(
+    update: (current: GearSystem) => GearSystem,
+  ): boolean {
+    const current = gearSystemRef.current;
+    const next = update(current);
+
+    if (next === current) {
+      return false;
+    }
+
+    const stamped = { ...next, updatedAt: new Date().toISOString() };
+    gearSystemRef.current = stamped;
+    setGearSystem(stamped);
+    setIsDirty(true);
+    return true;
   }
 
   return (
@@ -294,20 +322,28 @@ export function App() {
         <GuidedExampleExplanation example={activeExample} />
 
         <div className="canvasPanel">
-          <GearCanvas
-            activeTool={activeTool}
-            gearSystem={gearSystem}
-            onMoveGear={moveGear}
-            onSelectGear={setSelectedGearId}
-            selectedGearId={selectedGear?.id ?? ""}
-            solvedSystem={solvedSystem}
-          />
-          <div className="canvasStatus">
-            <span>
-              {formatSexagesimalAngle(selectedFrame?.angleDegrees ?? 0)}
-            </span>
-            <span>{elapsedSeconds.toFixed(2)}s</span>
+          <div className="canvasViewport">
+            <GearCanvas
+              activeTool={activeTool}
+              gearSystem={gearSystem}
+              onFinishMoveGear={finishMoveGear}
+              onMoveGear={moveGear}
+              onSelectGear={setSelectedGearId}
+              selectedGearId={selectedGear?.id ?? ""}
+              solvedSystem={solvedSystem}
+              validation={connectionValidation}
+            />
+            <div className="canvasStatus">
+              <span>
+                {formatSexagesimalAngle(selectedFrame?.angleDegrees ?? 0)}
+              </span>
+              <span>{elapsedSeconds.toFixed(2)}s</span>
+            </div>
           </div>
+          <ConnectionStatus
+            gearSystem={gearSystem}
+            validation={connectionValidation}
+          />
         </div>
       </section>
 
