@@ -211,12 +211,18 @@ select {
 }
 
 .canvasPanel {
-  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   overflow: hidden;
   min-height: 0;
   border: 1px solid #28303a;
   border-radius: 8px;
   background: #101317;
+}
+
+.canvasViewport {
+  position: relative;
+  min-height: 0;
 }
 
 .gearCanvas,
@@ -247,6 +253,30 @@ select {
   background: rgba(16, 19, 23, 0.82);
   font-size: 0.8rem;
   font-weight: 700;
+}
+
+.connectionStatusPanel {
+  min-height: 54px;
+  padding: 10px 14px;
+  border-top: 1px solid #28303a;
+  color: #dce5ee;
+  background: #151a20;
+  font-size: 0.8rem;
+}
+
+.connectionStatusPanel > strong {
+  display: block;
+  color: #f7f2e8;
+}
+
+.connectionStatusPanel ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #bcc7d4;
 }
 
 .rightPanel {
@@ -315,6 +345,16 @@ select {
   padding: 0 10px;
   color: #151a20;
   background: #ffffff;
+}
+
+.derivedField output {
+  min-height: 38px;
+  padding: 9px 10px;
+  border: 1px solid #d8d1c5;
+  border-radius: 7px;
+  color: #4c5663;
+  background: #f3f0ea;
+  font-variant-numeric: tabular-nums;
 }
 
 .inlineField {

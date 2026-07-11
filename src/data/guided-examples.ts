@@ -1,4 +1,5 @@
 import { gearSystemSchema } from "../schema/gear-system-schema";
+import { calculateMeshPhaseOffset } from "../simulation/gear-geometry";
 import type {
   GearConnection,
   GearNode,
@@ -61,7 +62,6 @@ function gear({
     label,
     teeth,
     module,
-    radius: pitchRadius(module, teeth),
     position,
     angle,
     phase,
@@ -73,18 +73,13 @@ function gear({
   };
 }
 
-function pitchRadius(module: number, teeth: number): number {
-  return (module * teeth) / 2;
-}
-
 function mesh(source: GearNode, target: GearNode): GearConnection {
   return {
     id: `${source.id}--${target.id}`,
     sourceGearId: source.id,
     targetGearId: target.id,
     kind: "mesh",
-    ratio: source.teeth / target.teeth,
-    phaseOffset: 0,
+    phaseOffset: calculateMeshPhaseOffset(source, target),
   };
 }
 
@@ -94,7 +89,6 @@ function compound(source: GearNode, target: GearNode): GearConnection {
     sourceGearId: source.id,
     targetGearId: target.id,
     kind: "compound",
-    ratio: 1,
     phaseOffset: 0,
   };
 }

@@ -7,30 +7,32 @@ const pointSchema = z.object({
   y: z.number(),
 });
 
-const gearNodeSchema = z.object({
-  id: idSchema,
-  label: z.string(),
-  teeth: z.number().int().min(6).max(240),
-  module: z.number().positive(),
-  radius: z.number().positive(),
-  position: pointSchema,
-  angle: z.number(),
-  phase: z.number(),
-  rpm: z.number().min(0),
-  direction: z.enum(["clockwise", "counterclockwise"]),
-  lockedAxle: z.boolean(),
-  isDriver: z.boolean(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-});
+const gearNodeSchema = z
+  .object({
+    id: idSchema,
+    label: z.string(),
+    teeth: z.number().int().min(6).max(240),
+    module: z.number().positive(),
+    position: pointSchema,
+    angle: z.number(),
+    phase: z.number(),
+    rpm: z.number().min(0),
+    direction: z.enum(["clockwise", "counterclockwise"]),
+    lockedAxle: z.boolean(),
+    isDriver: z.boolean(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  })
+  .strict();
 
-const gearConnectionSchema = z.object({
-  id: idSchema,
-  sourceGearId: idSchema,
-  targetGearId: idSchema,
-  kind: z.enum(["mesh", "compound"]),
-  ratio: z.number().positive(),
-  phaseOffset: z.number(),
-});
+const gearConnectionSchema = z
+  .object({
+    id: idSchema,
+    sourceGearId: idSchema,
+    targetGearId: idSchema,
+    kind: z.enum(["mesh", "compound"]),
+    phaseOffset: z.number(),
+  })
+  .strict();
 
 export const gearSystemSchema = z
   .object({
@@ -51,6 +53,7 @@ export const gearSystemSchema = z
   })
   .superRefine((system, context) => {
     const gearIds = new Set<string>();
+    const connectionIds = new Set<string>();
     const driverIds = new Set(system.drivers);
 
     system.gears.forEach((gear, index) => {
@@ -94,6 +97,16 @@ export const gearSystemSchema = z
     });
 
     system.connections.forEach((connection, index) => {
+      if (connectionIds.has(connection.id)) {
+        context.addIssue({
+          code: "custom",
+          message: `Duplicate connection id "${connection.id}".`,
+          path: ["connections", index, "id"],
+        });
+      }
+
+      connectionIds.add(connection.id);
+
       if (!gearIds.has(connection.sourceGearId)) {
         context.addIssue({
           code: "custom",

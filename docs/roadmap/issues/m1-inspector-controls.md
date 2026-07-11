@@ -5,7 +5,8 @@ Make the selected gear editable through production-style controls.
 ## Deliverables
 
 - Selected gear picker.
-- Teeth, radius, RPM, phase, direction, locked axle, and color controls.
+- Teeth, read-only derived pitch radius, RPM, phase, direction, locked axle,
+  and color controls.
 - Driver RPM editing protected so follower RPM is solver-controlled.
 - Resolved RPM and direction readouts.
 

@@ -32,6 +32,8 @@ pnpm test:e2e
 ## Project Map
 
 - `src/simulation/gear-system.ts` - deterministic gear graph types and solver
+- `src/simulation/gear-geometry.ts` - pitch geometry, validation, jam detection,
+  rigid axle transforms, snapping, and mesh phase math
 - `src/components/GearCanvas.tsx` - PixiJS rendering surface
 - `src/components/InspectorPanel.tsx` - selected gear controls
 - `src/components/VisualizationPanel.tsx` - ratio and waveform visualizations

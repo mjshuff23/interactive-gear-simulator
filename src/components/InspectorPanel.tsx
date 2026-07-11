@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { pitchRadius } from "../simulation/gear-geometry";
 
 import type {
   GearNode,
@@ -7,12 +8,12 @@ import type {
 } from "../simulation/gear-system";
 
 interface InspectorPanelProps {
-  gear: GearNode | undefined;
-  gears: GearNode[];
-  onChange: (updates: Partial<GearNode>) => void;
-  onDirectionChange: (direction: RotationDirection) => void;
-  onSelectGear: (gearId: string) => void;
-  solvedFrame: SimulationFrame | undefined;
+  readonly gear: GearNode | undefined;
+  readonly gears: GearNode[];
+  readonly onChange: (updates: Partial<GearNode>) => void;
+  readonly onDirectionChange: (direction: RotationDirection) => void;
+  readonly onSelectGear: (gearId: string) => void;
+  readonly solvedFrame: SimulationFrame | undefined;
 }
 
 export function InspectorPanel({
@@ -59,22 +60,13 @@ export function InspectorPanel({
         max={120}
         min={6}
         value={gear.teeth}
-        onCommit={(teeth) =>
-          onChange({
-            teeth,
-            radius: clampNumber(teeth * 1.9, 28, 160),
-          })
-        }
+        onCommit={(teeth) => onChange({ teeth })}
       />
 
-      <NumericField
-        key={`${gear.id}-radius`}
-        label="Radius"
-        max={160}
-        min={24}
-        value={Math.round(gear.radius)}
-        onCommit={(radius) => onChange({ radius })}
-      />
+      <div className="field derivedField">
+        <span>Pitch radius</span>
+        <output>{pitchRadius(gear).toFixed(2)} px</output>
+      </div>
 
       <NumericField
         key={`${gear.id}-rpm`}
@@ -96,22 +88,17 @@ export function InspectorPanel({
         onCommit={(phase) => onChange({ phase })}
       />
 
-      <div className="segmentedControl" aria-label="Direction">
-        <button
-          className={gear.direction === "clockwise" ? "selected" : ""}
-          type="button"
-          onClick={() => onDirectionChange("clockwise")}
-        >
-          CW
-        </button>
-        <button
-          className={gear.direction === "counterclockwise" ? "selected" : ""}
-          type="button"
-          onClick={() => onDirectionChange("counterclockwise")}
-        >
-          CCW
-        </button>
-      </div>
+      <DirectionControl
+        gear={gear}
+        solvedFrame={solvedFrame}
+        onDirectionChange={onDirectionChange}
+      />
+
+      {gear.isDriver ? null : (
+        <p className="muted">
+          Followers inherit speed and direction from the driving gear.
+        </p>
+      )}
 
       <label className="field inlineField">
         <span>Locked axle</span>
@@ -151,14 +138,52 @@ export function InspectorPanel({
   );
 }
 
+interface DirectionControlProps {
+  readonly gear: GearNode;
+  readonly onDirectionChange: (direction: RotationDirection) => void;
+  readonly solvedFrame: SimulationFrame | undefined;
+}
+
+// Only driver gears own their direction; followers run whichever way the
+// mesh dictates, so their control is read-only and mirrors the solver's
+// resolved direction instead of the stored (editable) field.
+function DirectionControl({
+  gear,
+  onDirectionChange,
+  solvedFrame,
+}: DirectionControlProps) {
+  const displayedDirection = gear.isDriver
+    ? gear.direction
+    : (solvedFrame?.direction ?? gear.direction);
+
+  return (
+    <div className="segmentedControl" aria-label="Direction">
+      {(["clockwise", "counterclockwise"] as const).map((direction) => (
+        <button
+          key={direction}
+          className={displayedDirection === direction ? "selected" : ""}
+          disabled={!gear.isDriver}
+          title={
+            gear.isDriver ? undefined : "Direction is set by the driving gear"
+          }
+          type="button"
+          onClick={() => onDirectionChange(direction)}
+        >
+          {direction === "clockwise" ? "CW" : "CCW"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface NumericFieldProps {
-  disabled?: boolean;
-  label: string;
-  max: number;
-  min: number;
-  step?: number;
-  value: number;
-  onCommit: (value: number) => void;
+  readonly disabled?: boolean;
+  readonly label: string;
+  readonly max: number;
+  readonly min: number;
+  readonly step?: number;
+  readonly value: number;
+  readonly onCommit: (value: number) => void;
 }
 
 function NumericField({
