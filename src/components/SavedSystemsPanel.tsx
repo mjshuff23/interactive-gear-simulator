@@ -14,15 +14,15 @@ import type { GearSystem } from "../simulation/gear-system";
 import "./SavedSystemsPanel.css";
 
 interface SavedSystemsPanelProps {
-  currentSystem: GearSystem;
-  activeSavedSystemId: string | null;
-  isDirty: boolean;
-  onLoadSystem: (system: GearSystem) => void;
-  onSaveSuccess: (system: GearSystem) => void;
-  onRenameSuccess: (summary: SavedGearSystemSummary) => void;
-  onDeleteSuccess: (deletedId: string) => void;
-  onRequestAuth: () => void;
-  isAuthed: boolean;
+  readonly currentSystem: GearSystem;
+  readonly activeSavedSystemId: string | null;
+  readonly isDirty: boolean;
+  readonly onLoadSystem: (system: GearSystem) => void;
+  readonly onSaveSuccess: (system: GearSystem) => void;
+  readonly onRenameSuccess: (summary: SavedGearSystemSummary) => void;
+  readonly onDeleteSuccess: (deletedId: string) => void;
+  readonly onRequestAuth: () => void;
+  readonly isAuthed: boolean;
 }
 
 export function SavedSystemsPanel({
@@ -65,7 +65,7 @@ export function SavedSystemsPanel({
   useEffect(() => {
     if (isAuthed && client) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      void loadList();
+      loadList().catch(() => {});
     } else {
       setSystems([]);
     }
@@ -179,6 +179,8 @@ export function SavedSystemsPanel({
     }
   }
 
+  const saveButtonLabel = isSaving ? "Saving..." : "Save";
+
   return (
     <div className="saved-systems-panel">
       <div className="actions-bar">
@@ -186,7 +188,7 @@ export function SavedSystemsPanel({
           onClick={handleSave}
           disabled={isSaving || config.status !== "ready"}
         >
-          {isSaving ? "Saving..." : activeSavedSystemId ? "Save" : "Save"}
+          {saveButtonLabel}
         </button>
         {activeSavedSystemId && (
           <button

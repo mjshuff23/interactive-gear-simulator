@@ -3,8 +3,8 @@ import { useSupabaseAuth } from "../auth/useSupabaseAuth";
 import "./AuthModal.css";
 
 interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
@@ -27,8 +27,21 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <div className="auth-modal-overlay" onClick={onClose}>
-      <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="auth-modal-overlay"
+      onClick={onClose}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
+      role="presentation"
+    >
+      <div
+        className="auth-modal-content"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <button className="auth-modal-close" onClick={onClose} aria-label="Close">
           &times;
         </button>
@@ -87,9 +100,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         {(authState.status === "otp-sent" ||
           authState.status === "verifying-otp") && (
           <div className="auth-verify-step">
-            <p role="status">
+            <output>
               A 6-digit code has been sent to <strong>{authState.email}</strong>.
-            </p>
+            </output>
             <form onSubmit={handleVerifyOtp} className="auth-form">
               <label htmlFor="otp-input">Verification Code</label>
               <input
