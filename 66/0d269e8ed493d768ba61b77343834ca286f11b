@@ -1,0 +1,54 @@
+src/components/ConnectionStatus.tsx
+  s_f9271192d339ea::t_a5bfb17ec39869 118-121
+  s_f9271192d339ea::t_d4733a744333ec 111-112
+  s_f9271192d339ea::t_f527c3dff91c39 5-6
+src/components/GearCanvas.tsx
+  s_f9271192d339ea::t_096eb6a0b00854 364,373
+  s_f9271192d339ea::t_3b705daa4b2fbd 322-334,336-363,366-369,375,377,379-385,387-389,397
+  s_f9271192d339ea::t_6965110fb8a3e9 365
+  s_f9271192d339ea::t_f56902efd6d890 370
+  s_f9271192d339ea::t_88870a42f71e1a 372
+  s_f9271192d339ea::t_4659da2bea1cff 390-392,394-396
+  s_f9271192d339ea::t_9f9236714a203f 398-400
+  s_f9271192d339ea::t_b33d88ceeec2bc 8,393
+src/simulation/gear-system.test.ts
+  s_f9271192d339ea::t_80318b74c11e6d 270-314
+src/simulation/gear-geometry.ts
+  s_f9271192d339ea::t_79bc9073952119 154-187,232-233,235-236,238-239,242-245,264-265,268-274,307
+  s_f9271192d339ea::t_ce92ba55f32160 339-349
+  s_f9271192d339ea::t_55594966cfc1c6 375-381
+  s_f9271192d339ea::t_b5631e8e72e36a 393
+  s_f9271192d339ea::t_441da4d6a9b5ec 114
+  s_f9271192d339ea::t_8b02f662486593 278,285
+  s_f9271192d339ea::t_c90839f3dbcf4f 580-588
+  s_f9271192d339ea::t_2f2ad26688d04b 396-421
+  s_f9271192d339ea::t_ac03df0430d128 394,435-462,496-497,499-529,533-535,537-538,542-578
+  s_f9271192d339ea::t_4c7f8ae081e8c9 338
+  s_f9271192d339ea::t_1fa816c2bd8046 395
+  s_f9271192d339ea::t_c3611e46f6af6f 579
+src/simulation/gear-system.ts
+  s_f9271192d339ea::t_161b1318246012 327-331
+  s_f9271192d339ea::t_91519dffe53493 259-308,325
+  s_f9271192d339ea::t_cf0b4b63118869 85-86
+  s_f9271192d339ea::t_592ed0a412e7b8 142,146-156,163,177,185-198
+  s_f9271192d339ea::t_d1fee2b8a16676 324
+  s_f9271192d339ea::t_1aa4e36f60c4a5 326
+src/components/InspectorPanel.tsx
+  s_f9271192d339ea::t_9078520fe8c2f7 94-97,105-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "660d269e8ed493d768ba61b77343834ca286f11b",
+  "prompts": {},
+  "sessions": {
+    "s_f9271192d339ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "913a9c1a-1913-4367-9386-36920053fe36",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
