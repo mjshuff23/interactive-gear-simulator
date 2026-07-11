@@ -17,8 +17,8 @@ begin
     user_id := tests.get_supabase_uid(identifier);
     insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
     values (user_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', identifier || '@supabase.io', 'encrypted_password', now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', now(), now(), '', '', '', '');
-    insert into auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-    values (gen_random_uuid(), user_id, format('{"sub":"%s","email":"%s"}', user_id::text, identifier || '@supabase.io')::jsonb, 'email', now(), now(), now());
+    insert into auth.identities (id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+    values (gen_random_uuid(), user_id::text, user_id, format('{"sub":"%s","email":"%s"}', user_id::text, identifier || '@supabase.io')::jsonb, 'email', now(), now(), now());
 end;
 $$ language plpgsql;
 
