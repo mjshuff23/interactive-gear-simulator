@@ -14,7 +14,7 @@ import { GuidedExampleExplanation } from "./components/GuidedExampleExplanation"
 import { GuidedExampleSelector } from "./components/GuidedExampleSelector";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { VisualizationPanel } from "./components/VisualizationPanel";
-import { AuthPanel } from "./components/AuthPanel";
+import { AuthModal } from "./components/AuthModal";
 import { SavedSystemsPanel } from "./components/SavedSystemsPanel";
 import { useSupabaseAuth } from "./auth/useSupabaseAuth";
 import {
@@ -43,6 +43,7 @@ export function App() {
   const [activeSavedSystemId, setActiveSavedSystemId] = useState<string | null>(
     null,
   );
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authState] = useSupabaseAuth();
   const [gearSystem, setGearSystem] = useState<GearSystem>(() =>
     DEFAULT_GUIDED_EXAMPLE.createSystem(),
@@ -328,6 +329,13 @@ export function App() {
             </p>
           </div>
           <div className="topBarActions">
+            <button
+              className="ghostButton"
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+            >
+              {authState.status === "signed-in" ? `Account` : "Sign In"}
+            </button>
             <GuidedExampleSelector
               activeExampleId={activeExampleId}
               onSelectExample={loadGuidedExample}
@@ -372,7 +380,10 @@ export function App() {
       </section>
 
       <aside className="rightPanel" aria-label="Gear settings and telemetry">
-        <AuthPanel />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
         <SavedSystemsPanel
           currentSystem={gearSystem}
           activeSavedSystemId={activeSavedSystemId}
@@ -396,9 +407,7 @@ export function App() {
               setIsDirty(true);
             }
           }}
-          onRequestAuth={() => {
-            alert("Please sign in using the panel to save systems.");
-          }}
+          onRequestAuth={() => setIsAuthModalOpen(true)}
           isAuthed={authState.status === "signed-in"}
         />
         <InspectorPanel

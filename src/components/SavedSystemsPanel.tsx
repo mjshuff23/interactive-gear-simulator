@@ -200,7 +200,21 @@ export function SavedSystemsPanel({
 
       <div className="systems-list">
         <h3>Your Library</h3>
-        {!isAuthed && <p>Sign in to view and save to your library.</p>}
+        {!isAuthed && config.status === "ready" && (
+          <p>
+            <button
+              type="button"
+              className="textLink"
+              onClick={onRequestAuth}
+            >
+              Sign in
+            </button>{" "}
+            to view and save to your library.
+          </p>
+        )}
+        {!isAuthed && config.status !== "ready" && (
+          <p>Cloud saving is unavailable.</p>
+        )}
         {isAuthed && isLoadingList && <p>Loading...</p>}
         {isAuthed && errorMsg && <p className="error">{errorMsg}</p>}
         {isAuthed && !isLoadingList && systems.length === 0 && (

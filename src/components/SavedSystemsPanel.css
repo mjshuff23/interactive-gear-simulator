@@ -85,3 +85,18 @@
   border: 1px solid #555;
   color: #fff;
 }
+
+.textLink {
+  background: none !important;
+  border: none !important;
+  color: #007bff !important;
+  padding: 0 !important;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  display: inline;
+}
+
+.textLink:hover {
+  color: #0056b3 !important;
+}
