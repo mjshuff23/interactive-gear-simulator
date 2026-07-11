@@ -1,0 +1,21 @@
+src/components/GearCanvas.tsx
+  s_94f453708ff147::t_4a052d4d32a735 151-158
+  s_94f453708ff147::t_e8521c23cf724f 110,125
+  s_94f453708ff147::t_e303395034c681 126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "aa73d9a4e5a9427b37159540ce462ef4a2e33387",
+  "prompts": {},
+  "sessions": {
+    "s_94f453708ff147": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8058443b-d6ec-4fd9-b711-fd6f573dbdf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
