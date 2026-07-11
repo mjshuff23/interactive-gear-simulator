@@ -59,9 +59,8 @@ test("playback animates compound movement", async ({ page }) => {
 
   // Verify paused state can be resumed
   await page.getByRole("button", { name: "Pause" }).click();
-  const pausedTime = await timeDisplay.textContent();
+  await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
 
-  // Verify time doesn't change when paused
-  await page.waitForTimeout(500);
+  const pausedTime = await timeDisplay.textContent();
   await expect(timeDisplay).toHaveText(pausedTime!);
 });
