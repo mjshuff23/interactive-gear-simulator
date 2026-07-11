@@ -36,7 +36,9 @@ test("creates, selects, and deletes a gear", async ({ page }) => {
 
   // Verify it was deleted
   await expect(
-    page.locator("option", { hasText: "15T gear" }),
+    page
+      .getByRole("combobox", { name: /Selected gear/i })
+      .locator("option", { hasText: "15T gear" }),
   ).not.toBeAttached();
 });
 
@@ -48,7 +50,7 @@ test("playback animates compound movement", async ({ page }) => {
     .selectOption("compound-axle");
 
   // Verify initial state
-  const timeDisplay = page.locator(".canvasStatus span").last();
+  const timeDisplay = page.getByLabel("Simulation time");
   await expect(timeDisplay).toHaveText("0.00s");
 
   // Play

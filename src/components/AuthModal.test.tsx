@@ -234,4 +234,77 @@ describe("AuthModal", () => {
     await user.click(screen.getByRole("button", { name: "Clear error" }));
     expect(actions.clearError).toHaveBeenCalledTimes(1);
   });
+
+  it("renders restoring state", () => {
+    render(
+      <AuthModal
+        isOpen={true}
+        onClose={vi.fn()}
+        authState={{ ...defaultAuthState, status: "restoring" }}
+        authActions={defaultAuthActions}
+      />,
+    );
+    expect(screen.getByText(/Loading session.../i)).toBeInTheDocument();
+  });
+
+  it("disables input and shows sending state during sending-otp", () => {
+    render(
+      <AuthModal
+        isOpen={true}
+        onClose={vi.fn()}
+        authState={{ ...defaultAuthState, status: "sending-otp", email: null }}
+        authActions={defaultAuthActions}
+      />,
+    );
+    const emailInput = screen.getByLabelText(/Email address/i);
+    expect(emailInput).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Sending.../i })).toBeDisabled();
+  });
+
+  it("disables input and shows verifying state during verifying-otp", () => {
+    render(
+      <AuthModal
+        isOpen={true}
+        onClose={vi.fn()}
+        authState={{
+          ...defaultAuthState,
+          status: "verifying-otp",
+          email: "test@example.com",
+        }}
+        authActions={defaultAuthActions}
+      />,
+    );
+    const otpInput = screen.getByLabelText(/6-digit verification code/i);
+    expect(otpInput).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /Verifying.../i }),
+    ).toBeDisabled();
+  });
+
+  it("renders signed-in state with sign-out button", async () => {
+    const user = userEvent.setup();
+    const actions = { ...defaultAuthActions, signOut: vi.fn() };
+
+    render(
+      <AuthModal
+        isOpen={true}
+        onClose={vi.fn()}
+        authState={{
+          ...defaultAuthState,
+          status: "signed-in",
+          email: "user@example.com",
+        }}
+        authActions={actions}
+      />,
+    );
+
+    expect(screen.getByText(/Signed in as/i)).toBeInTheDocument();
+    expect(screen.getByText("user@example.com")).toBeInTheDocument();
+
+    const signOutButton = screen.getByRole("button", { name: /Sign Out/i });
+    expect(signOutButton).toBeInTheDocument();
+
+    await user.click(signOutButton);
+    expect(actions.signOut).toHaveBeenCalledTimes(1);
+  });
 });

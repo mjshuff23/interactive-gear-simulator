@@ -99,12 +99,26 @@ describe("useSupabaseAuth", () => {
   });
 
   it("handles OTP send success and resend cooldown", async () => {
-    mockClient.auth.signInWithOtp.mockResolvedValueOnce({ error: null });
+    let resolveSend: any;
+    mockClient.auth.signInWithOtp.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSend = resolve;
+        }),
+    );
 
     const { result } = renderHook(() => useSupabaseAuth());
 
+    let promise: any;
+    act(() => {
+      promise = result.current[1].sendOtp("test@example.com");
+    });
+
+    expect(result.current[0].status).toBe("sending-otp");
+
     await act(async () => {
-      await result.current[1].sendOtp("test@example.com");
+      resolveSend({ error: null });
+      await promise;
     });
 
     expect(result.current[0].status).toBe("otp-sent");
@@ -140,12 +154,26 @@ describe("useSupabaseAuth", () => {
   });
 
   it("handles OTP verify success", async () => {
-    mockClient.auth.verifyOtp.mockResolvedValueOnce({ error: null });
+    let resolveVerify: any;
+    mockClient.auth.verifyOtp.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveVerify = resolve;
+        }),
+    );
 
     const { result } = renderHook(() => useSupabaseAuth());
 
+    let promise: any;
+    act(() => {
+      promise = result.current[1].verifyOtp("test@example.com", "123456");
+    });
+
+    expect(result.current[0].status).toBe("verifying-otp");
+
     await act(async () => {
-      await result.current[1].verifyOtp("test@example.com", "123456");
+      resolveVerify({ error: null });
+      await promise;
     });
 
     // Verification itself doesn't set "signed-in", the subscription event does.
@@ -178,5 +206,54 @@ describe("useSupabaseAuth", () => {
 
     expect(result.current[0].status).toBe("signed-out");
     expect(result.current[0].email).toBeNull();
+  });
+
+  it("handles clearError action (with email fallback)", async () => {
+    mockClient.auth.signInWithOtp.mockResolvedValueOnce({ error: null });
+    mockClient.auth.verifyOtp.mockResolvedValueOnce({
+      error: { message: "Verify failed" },
+    });
+
+    const { result } = renderHook(() => useSupabaseAuth());
+
+    await act(async () => {
+      await result.current[1].sendOtp("test@example.com");
+    });
+
+    await act(async () => {
+      await result.current[1].verifyOtp("test@example.com", "123456");
+    });
+
+    expect(result.current[0].status).toBe("error");
+
+    act(() => {
+      result.current[1].clearError();
+    });
+
+    // With an email, clearError restores "otp-sent"
+    expect(result.current[0].status).toBe("otp-sent");
+    expect(result.current[0].errorMessage).toBeNull();
+  });
+
+  it("handles clearError action (without email fallback)", async () => {
+    mockClient.auth.signInWithOtp.mockResolvedValueOnce({
+      error: { message: "Send failed" },
+    });
+
+    const { result } = renderHook(() => useSupabaseAuth());
+
+    await act(async () => {
+      await result.current[1].sendOtp("test@example.com");
+    });
+
+    expect(result.current[0].status).toBe("error");
+
+    act(() => {
+      result.current[1].clearError();
+    });
+
+    // Without an email, clearError restores "signed-out"
+    expect(result.current[0].status).toBe("signed-out");
+    expect(result.current[0].errorMessage).toBeNull();
   });
 });

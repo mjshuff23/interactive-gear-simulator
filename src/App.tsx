@@ -369,7 +369,9 @@ export function App() {
               <span>
                 {formatSexagesimalAngle(selectedFrame?.angleDegrees ?? 0)}
               </span>
-              <span>{elapsedSeconds.toFixed(2)}s</span>
+              <span aria-label="Simulation time">
+                {elapsedSeconds.toFixed(2)}s
+              </span>
             </div>
           </div>
           <ConnectionStatus
