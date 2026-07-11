@@ -40,6 +40,11 @@ pnpm test:e2e
 - `docs/architecture/system-map.md` - Mermaid architecture diagrams
 - `docs/supabase/gear-systems.sql` - planned Supabase table/RLS SQL
 
+## Project Boundaries
+
+- All browser and backend-boundary code is TypeScript-only; no Python backend
+  for v1. Persistence goes through the typed Supabase adapter.
+
 ## Supabase Environment
 
 The app runs without Supabase credentials. Save/load wiring becomes active after
