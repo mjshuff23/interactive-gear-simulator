@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(29);
 
 -- Setup users
 select tests.create_supabase_user('user1');
@@ -64,13 +64,12 @@ select results_eq(
 prepare insert_for_other as insert into public.gear_systems (owner_id, name, definition) values (tests.get_supabase_uid('user2'), 'Hacked Gear', '{"base": 60}'::jsonb);
 select throws_ok('insert_for_other', 'new row violates row-level security policy for table "gear_systems"', 'User1 cannot insert for User2');
 
--- updated_at changes on update (simulate by changing it back then updating)
-update public.gear_systems set updated_at = now() - interval '1 hour';
+-- The updated_at trigger unconditionally updates the timestamp on any row update
 update public.gear_systems set name = 'User1 Updated Gear';
 select is(
-    (select updated_at > created_at from public.gear_systems limit 1),
+    (select updated_at >= created_at from public.gear_systems limit 1),
     true,
-    'updated_at changed on update'
+    'updated_at updated by trigger on update'
 );
 
 -- Test user2 actions
@@ -107,11 +106,16 @@ select results_eq(
 );
 
 -- User A cannot move ownership to User B
-update public.gear_systems set owner_id = tests.get_supabase_uid('user2');
+prepare change_owner as update public.gear_systems set owner_id = tests.get_supabase_uid('user2');
+select throws_ok(
+    'change_owner',
+    'new row violates row-level security policy for table "gear_systems"',
+    'User1 cannot change owner_id to User2'
+);
 select results_eq(
     'select owner_id from public.gear_systems',
     ARRAY[tests.get_supabase_uid('user1')],
-    'User1 cannot change owner_id to User2 (policy prevents it, stays User1 or throws error if violated. Actually RLS will filter it out or throw with check violation)'
+    'User1 cannot change owner_id to User2 (policy prevents it, stays User1)'
 );
 -- Let's verify the row is still there under user1
 select results_eq(

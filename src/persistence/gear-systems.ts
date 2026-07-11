@@ -118,8 +118,14 @@ export async function createSavedGearSystem(
   client: GearSupabaseClient,
   system: GearSystem,
 ): Promise<GearSystem> {
-  // Validate complete system before extracting
-  gearSystemSchema.parse(system);
+  const parsed = gearSystemSchema.safeParse(system);
+  if (!parsed.success) {
+    throw new PersistenceException(
+      "INVALID_DEFINITION",
+      "Failed to parse gear system definition.",
+      parsed.error,
+    );
+  }
 
   const definition = extractGearSystemDefinition(system);
   checkPayloadSize(definition);
@@ -152,8 +158,14 @@ export async function updateSavedGearSystem(
   system: GearSystem,
   expectedUpdatedAt: string,
 ): Promise<GearSystem> {
-  // Validate complete system before extracting
-  gearSystemSchema.parse(system);
+  const parsed = gearSystemSchema.safeParse(system);
+  if (!parsed.success) {
+    throw new PersistenceException(
+      "INVALID_DEFINITION",
+      "Failed to parse gear system definition.",
+      parsed.error,
+    );
+  }
 
   const definition = extractGearSystemDefinition(system);
   checkPayloadSize(definition);

@@ -1,14 +1,11 @@
-.auth-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+.auth-modal {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.auth-modal::backdrop {
   background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
   backdrop-filter: blur(4px);
 }
 
@@ -73,9 +70,9 @@
 
 .auth-error {
   padding: 0.75rem;
-  background-color: rgba(255, 120, 117, 0.2);
+  background-color: rgba(255, 120, 117, 0.1);
   border: 1px solid #ff7875;
-  color: #ff7875;
+  color: #ff9999;
   border-radius: 4px;
   margin-bottom: 1rem;
   display: flex;
@@ -85,7 +82,7 @@
 
 .auth-error button {
   background: transparent;
-  color: #ff4d4f;
+  color: #ff9999;
   border: none;
   font-size: 1.2rem;
   cursor: pointer;

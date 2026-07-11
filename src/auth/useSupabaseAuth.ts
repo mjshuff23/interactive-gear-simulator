@@ -152,9 +152,9 @@ export function useSupabaseAuth(): [SupabaseAuthState, SupabaseAuthActions] {
   const clearError = useCallback(() => {
     setErrorMessage(null);
     if (status === "error") {
-      setStatus("signed-out"); // Fallback
+      setStatus(email ? "otp-sent" : "signed-out"); // Fallback
     }
-  }, [status]);
+  }, [status, email]);
 
   return [
     { status, email, errorMessage, resendCooldown },

@@ -108,6 +108,7 @@ export function SavedSystemsPanel({
         } catch (e: unknown) {
           if (e instanceof PersistenceException && e.type === "STALE_WRITE") {
             alert("Stale write: The system was updated elsewhere.");
+            await loadList();
           } else {
             throw e;
           }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSupabaseAuth } from "../auth/useSupabaseAuth";
 import "./AuthModal.css";
 
@@ -12,7 +12,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [emailInput, setEmailInput] = useState("");
   const [otpInput, setOtpInput] = useState("");
 
-  if (!isOpen) return null;
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (isOpen && !dialog.open) {
+      dialog.showModal();
+    } else if (!isOpen && dialog.open) {
+      dialog.close();
+    }
+  }, [isOpen]);
 
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,20 +37,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   return (
-    <div
-      className="auth-modal-overlay"
-      onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
+    <dialog
+      ref={dialogRef}
+      className="auth-modal"
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) {
+          onClose();
+        }
       }}
-      role="presentation"
     >
       <div
         className="auth-modal-content"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
       >
         <button className="auth-modal-close" onClick={onClose} aria-label="Close">
           &times;
@@ -139,6 +147,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </div>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }

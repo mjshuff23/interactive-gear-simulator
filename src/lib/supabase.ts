@@ -33,7 +33,14 @@ export function getSupabaseConfiguration(): SupabaseConfiguration {
   }
 
   try {
-    new URL(url);
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      singletonClient = {
+        status: "invalid",
+        message: "VITE_SUPABASE_URL must use http or https protocol.",
+      };
+      return singletonClient;
+    }
   } catch {
     singletonClient = {
       status: "invalid",
