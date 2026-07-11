@@ -35,12 +35,10 @@ select policies_are(
 
 -- Test anonymous access
 select tests.clear_authentication();
-select is_empty(
-    'select * from public.gear_systems',
-    'Anonymous user cannot read'
-);
+prepare anon_select as select * from public.gear_systems;
+select throws_ok('anon_select', 'permission denied for table gear_systems', 'Anonymous cannot read');
 prepare anon_insert as insert into public.gear_systems (name, definition) values ('Anon Gear', '{}'::jsonb);
-select throws_ok('anon_insert', 'new row violates row-level security policy for table "gear_systems"', 'Anonymous cannot insert');
+select throws_ok('anon_insert', 'permission denied for table gear_systems', 'Anonymous cannot insert');
 
 -- Test user1 actions
 select tests.authenticate_as('user1');
