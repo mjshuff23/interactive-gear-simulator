@@ -1,0 +1,19 @@
+README.md
+  s_94f453708ff147::t_13fd41d12ad9e6 43-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "0cfca840857cbe13a6a33be2490981d868f02bb4",
+  "prompts": {},
+  "sessions": {
+    "s_94f453708ff147": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8058443b-d6ec-4fd9-b711-fd6f573dbdf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
