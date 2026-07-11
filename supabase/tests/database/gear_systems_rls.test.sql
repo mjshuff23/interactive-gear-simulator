@@ -1,4 +1,5 @@
 begin;
+create extension if not exists "basejump-supabase_test_helpers";
 select plan(29);
 
 -- Setup users
