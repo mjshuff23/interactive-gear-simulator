@@ -34,93 +34,106 @@ const gearConnectionSchema = z
   })
   .strict();
 
-export const gearSystemSchema = z
-  .object({
+export const gearSystemDefinitionCoreSchema = z.object({
+  base: z.literal(60),
+  units: z.literal("degrees"),
+  gears: z.array(gearNodeSchema),
+  connections: z.array(gearConnectionSchema),
+  drivers: z.array(idSchema),
+  viewport: z.object({
+    x: z.number(),
+    y: z.number(),
+    zoom: z.number().positive(),
+  }),
+});
+
+type RefinementTarget = z.infer<typeof gearSystemDefinitionCoreSchema>;
+
+export function structuralRefinements(
+  system: RefinementTarget,
+  context: z.RefinementCtx,
+) {
+  const gearIds = new Set<string>();
+  const connectionIds = new Set<string>();
+  const driverIds = new Set(system.drivers);
+
+  system.gears.forEach((gear, index) => {
+    if (gearIds.has(gear.id)) {
+      context.addIssue({
+        code: "custom",
+        message: `Duplicate gear id "${gear.id}".`,
+        path: ["gears", index, "id"],
+      });
+    }
+
+    gearIds.add(gear.id);
+  });
+
+  system.drivers.forEach((driverId, index) => {
+    if (!gearIds.has(driverId)) {
+      context.addIssue({
+        code: "custom",
+        message: `Driver "${driverId}" does not reference an existing gear.`,
+        path: ["drivers", index],
+      });
+    }
+  });
+
+  system.gears.forEach((gear, index) => {
+    if (gear.isDriver && !driverIds.has(gear.id)) {
+      context.addIssue({
+        code: "custom",
+        message: `Driver gear "${gear.id}" is missing from drivers[].`,
+        path: ["gears", index, "isDriver"],
+      });
+    }
+
+    if (!gear.isDriver && driverIds.has(gear.id)) {
+      context.addIssue({
+        code: "custom",
+        message: `Gear "${gear.id}" is listed in drivers[] but isDriver is false.`,
+        path: ["gears", index, "isDriver"],
+      });
+    }
+  });
+
+  system.connections.forEach((connection, index) => {
+    if (connectionIds.has(connection.id)) {
+      context.addIssue({
+        code: "custom",
+        message: `Duplicate connection id "${connection.id}".`,
+        path: ["connections", index, "id"],
+      });
+    }
+
+    connectionIds.add(connection.id);
+
+    if (!gearIds.has(connection.sourceGearId)) {
+      context.addIssue({
+        code: "custom",
+        message: `Connection source "${connection.sourceGearId}" does not reference an existing gear.`,
+        path: ["connections", index, "sourceGearId"],
+      });
+    }
+
+    if (!gearIds.has(connection.targetGearId)) {
+      context.addIssue({
+        code: "custom",
+        message: `Connection target "${connection.targetGearId}" does not reference an existing gear.`,
+        path: ["connections", index, "targetGearId"],
+      });
+    }
+  });
+}
+
+export const gearSystemDefinitionSchema =
+  gearSystemDefinitionCoreSchema.superRefine(structuralRefinements);
+
+export const gearSystemSchema = gearSystemDefinitionCoreSchema
+  .extend({
     id: idSchema,
     name: z.string().min(1),
-    base: z.literal(60),
-    units: z.literal("degrees"),
-    gears: z.array(gearNodeSchema),
-    connections: z.array(gearConnectionSchema),
-    drivers: z.array(idSchema),
-    viewport: z.object({
-      x: z.number(),
-      y: z.number(),
-      zoom: z.number().positive(),
-    }),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
-  .superRefine((system, context) => {
-    const gearIds = new Set<string>();
-    const connectionIds = new Set<string>();
-    const driverIds = new Set(system.drivers);
-
-    system.gears.forEach((gear, index) => {
-      if (gearIds.has(gear.id)) {
-        context.addIssue({
-          code: "custom",
-          message: `Duplicate gear id "${gear.id}".`,
-          path: ["gears", index, "id"],
-        });
-      }
-
-      gearIds.add(gear.id);
-    });
-
-    system.drivers.forEach((driverId, index) => {
-      if (!gearIds.has(driverId)) {
-        context.addIssue({
-          code: "custom",
-          message: `Driver "${driverId}" does not reference an existing gear.`,
-          path: ["drivers", index],
-        });
-      }
-    });
-
-    system.gears.forEach((gear, index) => {
-      if (gear.isDriver && !driverIds.has(gear.id)) {
-        context.addIssue({
-          code: "custom",
-          message: `Driver gear "${gear.id}" is missing from drivers[].`,
-          path: ["gears", index, "isDriver"],
-        });
-      }
-
-      if (!gear.isDriver && driverIds.has(gear.id)) {
-        context.addIssue({
-          code: "custom",
-          message: `Gear "${gear.id}" is listed in drivers[] but isDriver is false.`,
-          path: ["gears", index, "isDriver"],
-        });
-      }
-    });
-
-    system.connections.forEach((connection, index) => {
-      if (connectionIds.has(connection.id)) {
-        context.addIssue({
-          code: "custom",
-          message: `Duplicate connection id "${connection.id}".`,
-          path: ["connections", index, "id"],
-        });
-      }
-
-      connectionIds.add(connection.id);
-
-      if (!gearIds.has(connection.sourceGearId)) {
-        context.addIssue({
-          code: "custom",
-          message: `Connection source "${connection.sourceGearId}" does not reference an existing gear.`,
-          path: ["connections", index, "sourceGearId"],
-        });
-      }
-
-      if (!gearIds.has(connection.targetGearId)) {
-        context.addIssue({
-          code: "custom",
-          message: `Connection target "${connection.targetGearId}" does not reference an existing gear.`,
-          path: ["connections", index, "targetGearId"],
-        });
-      }
-    });
-  });
+  .superRefine(structuralRefinements);

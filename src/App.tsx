@@ -6,7 +6,6 @@ import {
   MousePointer2,
   Pause,
   Play,
-  Save,
   Trash2,
 } from "lucide-react";
 import { GearCanvas } from "./components/GearCanvas";
@@ -15,6 +14,9 @@ import { GuidedExampleExplanation } from "./components/GuidedExampleExplanation"
 import { GuidedExampleSelector } from "./components/GuidedExampleSelector";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { VisualizationPanel } from "./components/VisualizationPanel";
+import { AuthPanel } from "./components/AuthPanel";
+import { SavedSystemsPanel } from "./components/SavedSystemsPanel";
+import { useSupabaseAuth } from "./auth/useSupabaseAuth";
 import {
   DEFAULT_GUIDED_EXAMPLE,
   getGuidedExample,
@@ -36,9 +38,12 @@ import {
 const SIMULATION_STEP_SECONDS = 1 / 30;
 
 export function App() {
-  const [activeExampleId, setActiveExampleId] = useState<GuidedExampleId>(
-    DEFAULT_GUIDED_EXAMPLE.id,
+  const [activeExampleId, setActiveExampleId] =
+    useState<GuidedExampleId | null>(DEFAULT_GUIDED_EXAMPLE.id);
+  const [activeSavedSystemId, setActiveSavedSystemId] = useState<string | null>(
+    null,
   );
+  const [authState] = useSupabaseAuth();
   const [gearSystem, setGearSystem] = useState<GearSystem>(() =>
     DEFAULT_GUIDED_EXAMPLE.createSystem(),
   );
@@ -56,7 +61,9 @@ export function App() {
   const nextGeneratedGearIndexRef = useRef(
     getNextGeneratedGearIndex(gearSystem.gears),
   );
-  const activeExample = getGuidedExample(activeExampleId);
+  const activeExample = activeExampleId
+    ? getGuidedExample(activeExampleId)
+    : null;
 
   function loadGuidedExample(exampleId: GuidedExampleId): boolean {
     if (exampleId === activeExampleId) {
@@ -76,6 +83,7 @@ export function App() {
     const system = example.createSystem();
 
     setActiveExampleId(example.id);
+    setActiveSavedSystemId(null);
     setGearSystem(system);
     gearSystemRef.current = system;
     setSelectedGearId(example.defaultSelectedGearId);
@@ -88,6 +96,31 @@ export function App() {
 
     return true;
   }
+
+  function handleLoadSavedSystem(system: GearSystem) {
+    setActiveExampleId(null);
+    setActiveSavedSystemId(system.id);
+    setGearSystem(system);
+    gearSystemRef.current = system;
+    setSelectedGearId(system.gears[0]?.id ?? "");
+    setIsPlaying(false);
+    setElapsedSeconds(0);
+    elapsedSecondsRef.current = 0;
+    setActiveTool("select");
+    nextGeneratedGearIndexRef.current = getNextGeneratedGearIndex(system.gears);
+    setIsDirty(false);
+  }
+
+  useEffect(() => {
+    if (authState.status === "signed-out") {
+      if (activeSavedSystemId !== null) {
+        // Detach active persistence record on sign out
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveSavedSystemId(null);
+        setIsDirty(true);
+      }
+    }
+  }, [authState.status, activeSavedSystemId]);
 
   useEffect(() => {
     elapsedSecondsRef.current = elapsedSeconds;
@@ -300,15 +333,6 @@ export function App() {
               onSelectExample={loadGuidedExample}
             />
             <button
-              className="ghostButton"
-              disabled
-              title="Saving is unavailable until Supabase auth is connected."
-              type="button"
-            >
-              <Save size={16} />
-              Save System
-            </button>
-            <button
               className="primaryButton"
               type="button"
               onClick={() => setIsPlaying((current) => !current)}
@@ -319,7 +343,7 @@ export function App() {
           </div>
         </header>
 
-        <GuidedExampleExplanation example={activeExample} />
+        {activeExample && <GuidedExampleExplanation example={activeExample} />}
 
         <div className="canvasPanel">
           <div className="canvasViewport">
@@ -348,6 +372,35 @@ export function App() {
       </section>
 
       <aside className="rightPanel" aria-label="Gear settings and telemetry">
+        <AuthPanel />
+        <SavedSystemsPanel
+          currentSystem={gearSystem}
+          activeSavedSystemId={activeSavedSystemId}
+          isDirty={isDirty}
+          onLoadSystem={handleLoadSavedSystem}
+          onSaveSuccess={(system) => {
+            handleLoadSavedSystem(system);
+          }}
+          onRenameSuccess={(summary) => {
+            if (activeSavedSystemId === summary.id) {
+              applyGearSystemEdit((current) => ({
+                ...current,
+                name: summary.name,
+              }));
+              setIsDirty(false);
+            }
+          }}
+          onDeleteSuccess={(deletedId) => {
+            if (activeSavedSystemId === deletedId) {
+              setActiveSavedSystemId(null);
+              setIsDirty(true);
+            }
+          }}
+          onRequestAuth={() => {
+            alert("Please sign in using the panel to save systems.");
+          }}
+          isAuthed={authState.status === "signed-in"}
+        />
         <InspectorPanel
           gear={selectedGear}
           gears={gearSystem.gears}

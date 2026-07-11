@@ -1,52 +1,49 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
-export interface Database {
-  public: {
-    Tables: {
-      gear_systems: {
-        Row: {
-          id: string;
-          owner_id: string;
-          name: string;
-          definition: unknown;
-          thumbnail_url: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          owner_id: string;
-          name: string;
-          definition: unknown;
-          thumbnail_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          name?: string;
-          definition?: unknown;
-          thumbnail_url?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-    };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-}
+import type { Database } from "./database.types";
 
 export type GearSupabaseClient = SupabaseClient<Database>;
 
-export function createGearSupabaseClient(): GearSupabaseClient | null {
+export type SupabaseConfiguration =
+  | { status: "unconfigured" }
+  | { status: "invalid"; message: string }
+  | { status: "ready"; client: GearSupabaseClient };
+
+let singletonClient: SupabaseConfiguration | null = null;
+
+export function getSupabaseConfiguration(): SupabaseConfiguration {
+  if (singletonClient) {
+    return singletonClient;
+  }
+
   const url = import.meta.env.VITE_SUPABASE_URL;
   const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!url || !publishableKey) {
-    return null;
+  if (!url && !publishableKey) {
+    singletonClient = { status: "unconfigured" };
+    return singletonClient;
   }
 
-  return createClient<Database>(url, publishableKey);
+  if (!url || !publishableKey) {
+    singletonClient = {
+      status: "invalid",
+      message:
+        "Both VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY must be provided.",
+    };
+    return singletonClient;
+  }
+
+  try {
+    new URL(url);
+  } catch {
+    singletonClient = {
+      status: "invalid",
+      message: "VITE_SUPABASE_URL is not a valid URL.",
+    };
+    return singletonClient;
+  }
+
+  const client = createClient<Database>(url, publishableKey);
+  singletonClient = { status: "ready", client };
+
+  return singletonClient;
 }
