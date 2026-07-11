@@ -111,7 +111,7 @@ export function getCompoundComponent(
     queue.push(...(adjacency.get(currentId) ?? []));
   }
 
-  return [...component].sort();
+  return [...component].sort(compareStrings);
 }
 
 export function moveCompoundComponent(
@@ -151,6 +151,40 @@ export function snapCompoundComponentToMesh(
     return system;
   }
 
+  const candidate = findBestSnapCandidate(system, movingGearIds);
+
+  if (!candidate) {
+    return system;
+  }
+
+  const translated = translateGearIds(
+    system,
+    movingGearIds,
+    snapTranslationDelta(candidate),
+  );
+  const { connections, phaseChanged } = withRecalculatedMeshPhases(
+    translated,
+    movingGearIds,
+  );
+
+  if (translated === system && !phaseChanged) {
+    return system;
+  }
+
+  return phaseChanged ? { ...translated, connections } : translated;
+}
+
+interface SnapCandidate {
+  connection: GearConnection;
+  distanceError: number;
+  fixedGear: GearNode;
+  movingGear: GearNode;
+}
+
+function findBestSnapCandidate(
+  system: GearSystem,
+  movingGearIds: ReadonlySet<string>,
+): SnapCandidate | undefined {
   const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
   const candidates: SnapCandidate[] = [];
 
@@ -195,26 +229,20 @@ export function snapCompoundComponentToMesh(
     }
   }
 
-  candidates.sort((a, b) => {
-    const errorDifference = a.distanceError - b.distanceError;
+  return candidates.sort(compareSnapCandidates)[0];
+}
 
-    if (errorDifference !== 0) {
-      return errorDifference;
-    }
+function compareSnapCandidates(a: SnapCandidate, b: SnapCandidate): number {
+  const errorDifference = a.distanceError - b.distanceError;
 
-    return a.connection.id < b.connection.id
-      ? -1
-      : a.connection.id > b.connection.id
-        ? 1
-        : 0;
-  });
-
-  const candidate = candidates[0];
-
-  if (!candidate) {
-    return system;
+  if (errorDifference !== 0) {
+    return errorDifference;
   }
 
+  return compareStrings(a.connection.id, b.connection.id);
+}
+
+function snapTranslationDelta(candidate: SnapCandidate): Point {
   const actualDistance = centerDistance(
     candidate.fixedGear.position,
     candidate.movingGear.position,
@@ -233,21 +261,28 @@ export function snapCompoundComponentToMesh(
     x: candidate.fixedGear.position.x + unit.x * expectedDistance,
     y: candidate.fixedGear.position.y + unit.y * expectedDistance,
   };
-  const translated = translateGearIds(system, movingGearIds, {
+
+  return {
     x: snappedMovingPosition.x - candidate.movingGear.position.x,
     y: snappedMovingPosition.y - candidate.movingGear.position.y,
-  });
+  };
+}
+
+function withRecalculatedMeshPhases(
+  translated: GearSystem,
+  movingGearIds: ReadonlySet<string>,
+): { connections: GearConnection[]; phaseChanged: boolean } {
   const translatedGearsById = new Map(
     translated.gears.map((gear) => [gear.id, gear]),
   );
-  const validation = validateConnections(translated);
+  const geometryByConnectionId = validateConnectionGeometry(translated);
   let phaseChanged = false;
   const connections = translated.connections.map((connection) => {
     if (
       connection.kind !== "mesh" ||
       (!movingGearIds.has(connection.sourceGearId) &&
         !movingGearIds.has(connection.targetGearId)) ||
-      !validation.byConnectionId[connection.id]?.isGeometricallyValid
+      !geometryByConnectionId[connection.id]?.isGeometricallyValid
     ) {
       return connection;
     }
@@ -269,18 +304,7 @@ export function snapCompoundComponentToMesh(
     return { ...connection, phaseOffset };
   });
 
-  if (translated === system && !phaseChanged) {
-    return system;
-  }
-
-  return phaseChanged ? { ...translated, connections } : translated;
-}
-
-interface SnapCandidate {
-  connection: GearConnection;
-  distanceError: number;
-  fixedGear: GearNode;
-  movingGear: GearNode;
+  return { connections, phaseChanged };
 }
 
 function translateGearIds(
@@ -312,12 +336,23 @@ export function validateConnections(
   system: GearSystem,
 ): ConnectionValidationResult {
   const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
+  const byConnectionId = validateConnectionGeometry(system);
+
+  return {
+    byConnectionId,
+    jammedComponents: findJammedComponents(system, byConnectionId, gearsById),
+  };
+}
+
+export function validateConnectionGeometry(
+  system: GearSystem,
+): Readonly<Record<string, ConnectionValidation>> {
+  const gearsById = new Map(system.gears.map((gear) => [gear.id, gear]));
   const byConnectionId: Record<string, ConnectionValidation> = {};
 
   for (const connection of system.connections) {
     const source = gearsById.get(connection.sourceGearId);
     const target = gearsById.get(connection.targetGearId);
-    const issueCodes: ConnectionIssueCode[] = [];
 
     if (!source || !target) {
       byConnectionId[connection.id] = {
@@ -337,22 +372,13 @@ export function validateConnections(
         ? pitchRadius(source) + pitchRadius(target)
         : 0;
     const distanceError = Math.abs(actual - expected);
-
-    if (source.id === target.id) {
-      issueCodes.push("self-connection");
-    }
-
-    if (connection.kind === "mesh") {
-      if (!approximatelyEqual(source.module, target.module)) {
-        issueCodes.push("module-mismatch");
-      }
-
-      if (distanceError > MESH_VALIDITY_TOLERANCE_PX) {
-        issueCodes.push("mesh-distance");
-      }
-    } else if (actual > COMPOUND_VALIDITY_TOLERANCE_PX) {
-      issueCodes.push("compound-center");
-    }
+    const issueCodes = collectConnectionIssueCodes(
+      connection,
+      source,
+      target,
+      actual,
+      distanceError,
+    );
 
     byConnectionId[connection.id] = {
       connectionId: connection.id,
@@ -364,10 +390,35 @@ export function validateConnections(
     };
   }
 
-  return {
-    byConnectionId,
-    jammedComponents: findJammedComponents(system, byConnectionId, gearsById),
-  };
+  return byConnectionId;
+}
+
+function collectConnectionIssueCodes(
+  connection: GearConnection,
+  source: GearNode,
+  target: GearNode,
+  actualCenterDistance: number,
+  distanceError: number,
+): ConnectionIssueCode[] {
+  const issueCodes: ConnectionIssueCode[] = [];
+
+  if (source.id === target.id) {
+    issueCodes.push("self-connection");
+  }
+
+  if (connection.kind === "mesh") {
+    if (!approximatelyEqual(source.module, target.module)) {
+      issueCodes.push("module-mismatch");
+    }
+
+    if (distanceError > MESH_VALIDITY_TOLERANCE_PX) {
+      issueCodes.push("mesh-distance");
+    }
+  } else if (actualCenterDistance > COMPOUND_VALIDITY_TOLERANCE_PX) {
+    issueCodes.push("compound-center");
+  }
+
+  return issueCodes;
 }
 
 interface ConstraintEdge {
@@ -381,6 +432,34 @@ function findJammedComponents(
   byConnectionId: Readonly<Record<string, ConnectionValidation>>,
   gearsById: ReadonlyMap<string, GearNode>,
 ): JammedComponent[] {
+  const adjacency = buildConstraintAdjacency(system, byConnectionId, gearsById);
+  const visited = new Set<string>();
+  const jammedComponents: JammedComponent[] = [];
+
+  for (const root of system.gears) {
+    if (visited.has(root.id)) {
+      continue;
+    }
+
+    const component = analyzeConstraintComponent(root.id, adjacency, visited);
+
+    if (component.reason) {
+      jammedComponents.push({
+        gearIds: [...component.gearIds].sort(compareStrings),
+        connectionIds: [...component.connectionIds].sort(compareStrings),
+        reason: component.reason,
+      });
+    }
+  }
+
+  return jammedComponents;
+}
+
+function buildConstraintAdjacency(
+  system: GearSystem,
+  byConnectionId: Readonly<Record<string, ConnectionValidation>>,
+  gearsById: ReadonlyMap<string, GearNode>,
+): Map<string, ConstraintEdge[]> {
   const adjacency = new Map<string, ConstraintEdge[]>();
 
   for (const gear of system.gears) {
@@ -414,64 +493,99 @@ function findJammedComponents(
     });
   }
 
-  const visited = new Set<string>();
-  const jammedComponents: JammedComponent[] = [];
+  return adjacency;
+}
 
-  for (const root of system.gears) {
-    if (visited.has(root.id)) {
+interface ConstraintComponentState {
+  multipliers: Map<string, number>;
+  queue: string[];
+  gearIds: Set<string>;
+  connectionIds: Set<string>;
+  hasDirectionConflict: boolean;
+  hasRatioConflict: boolean;
+}
+
+function analyzeConstraintComponent(
+  rootId: string,
+  adjacency: ReadonlyMap<string, ConstraintEdge[]>,
+  visited: Set<string>,
+): {
+  gearIds: ReadonlySet<string>;
+  connectionIds: ReadonlySet<string>;
+  reason: JammedComponent["reason"] | null;
+} {
+  const state: ConstraintComponentState = {
+    multipliers: new Map([[rootId, 1]]),
+    queue: [rootId],
+    gearIds: new Set(),
+    connectionIds: new Set(),
+    hasDirectionConflict: false,
+    hasRatioConflict: false,
+  };
+
+  while (state.queue.length > 0) {
+    const gearId = state.queue.shift();
+
+    if (!gearId || visited.has(gearId)) {
       continue;
     }
 
-    const queue = [root.id];
-    const multipliers = new Map<string, number>([[root.id, 1]]);
-    const componentGearIds = new Set<string>();
-    const componentConnectionIds = new Set<string>();
-    let hasDirectionConflict = false;
-    let hasRatioConflict = false;
+    visited.add(gearId);
+    state.gearIds.add(gearId);
+    const currentMultiplier = state.multipliers.get(gearId) ?? 1;
 
-    while (queue.length > 0) {
-      const gearId = queue.shift();
-
-      if (!gearId || visited.has(gearId)) {
-        continue;
-      }
-
-      visited.add(gearId);
-      componentGearIds.add(gearId);
-      const currentMultiplier = multipliers.get(gearId) ?? 1;
-
-      for (const edge of adjacency.get(gearId) ?? []) {
-        componentConnectionIds.add(edge.connection.id);
-        componentGearIds.add(edge.neighborId);
-        const candidateMultiplier = currentMultiplier * edge.multiplier;
-        const existingMultiplier = multipliers.get(edge.neighborId);
-
-        if (existingMultiplier === undefined) {
-          multipliers.set(edge.neighborId, candidateMultiplier);
-          queue.push(edge.neighborId);
-          continue;
-        }
-
-        if (Math.sign(candidateMultiplier) !== Math.sign(existingMultiplier)) {
-          hasDirectionConflict = true;
-        } else if (
-          !approximatelyEqual(candidateMultiplier, existingMultiplier)
-        ) {
-          hasRatioConflict = true;
-        }
-      }
-    }
-
-    if (hasDirectionConflict || hasRatioConflict) {
-      jammedComponents.push({
-        gearIds: [...componentGearIds].sort(),
-        connectionIds: [...componentConnectionIds].sort(),
-        reason: hasDirectionConflict ? "direction-conflict" : "ratio-conflict",
-      });
+    for (const edge of adjacency.get(gearId) ?? []) {
+      applyConstraintEdge(edge, currentMultiplier, state);
     }
   }
 
-  return jammedComponents;
+  let reason: JammedComponent["reason"] | null = null;
+
+  if (state.hasDirectionConflict) {
+    reason = "direction-conflict";
+  } else if (state.hasRatioConflict) {
+    reason = "ratio-conflict";
+  }
+
+  return {
+    gearIds: state.gearIds,
+    connectionIds: state.connectionIds,
+    reason,
+  };
+}
+
+function applyConstraintEdge(
+  edge: ConstraintEdge,
+  currentMultiplier: number,
+  state: ConstraintComponentState,
+): void {
+  state.connectionIds.add(edge.connection.id);
+  state.gearIds.add(edge.neighborId);
+  const candidateMultiplier = currentMultiplier * edge.multiplier;
+  const existingMultiplier = state.multipliers.get(edge.neighborId);
+
+  if (existingMultiplier === undefined) {
+    state.multipliers.set(edge.neighborId, candidateMultiplier);
+    state.queue.push(edge.neighborId);
+    return;
+  }
+
+  if (Math.sign(candidateMultiplier) !== Math.sign(existingMultiplier)) {
+    state.hasDirectionConflict = true;
+  } else if (!approximatelyEqual(candidateMultiplier, existingMultiplier)) {
+    state.hasRatioConflict = true;
+  }
+}
+
+// Explicit codepoint comparator: Array.prototype.sort without a comparator is
+// flagged as unreliable, and localeCompare would make ordering depend on the
+// runtime locale, breaking the deterministic-output guarantee.
+function compareStrings(a: string, b: string): number {
+  if (a < b) {
+    return -1;
+  }
+
+  return a > b ? 1 : 0;
 }
 
 function approximatelyEqual(a: number, b: number): boolean {

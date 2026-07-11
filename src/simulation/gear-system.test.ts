@@ -267,6 +267,51 @@ describe("solveGearSystem", () => {
     });
   });
 
+  it("jams a component whose two drivers demand conflicting motion", () => {
+    const driverA = testGear("a", 0, 0, 20, { isDriver: true, rpm: 10 });
+    const driverB = testGear("b", 20, 0, 20, {
+      isDriver: true,
+      rpm: 10,
+      direction: "clockwise",
+    });
+    const system = testSystem(
+      [driverA, driverB],
+      [testConnection("ab", "a", "b")],
+      [driverA.id, driverB.id],
+    );
+
+    const solved = solveGearSystem(system, 1);
+
+    expect(solved.framesByGear.a.rpm).toBe(0);
+    expect(solved.framesByGear.b.rpm).toBe(0);
+    expect(solved.framesByGear.a.angleDegrees).toBe(0);
+  });
+
+  it("keeps a component moving when two drivers demand compatible motion", () => {
+    const driverA = testGear("a", 0, 0, 20, { isDriver: true, rpm: 10 });
+    const driverB = testGear("b", 20, 0, 20, {
+      isDriver: true,
+      rpm: 10,
+      direction: "counterclockwise",
+    });
+    const system = testSystem(
+      [driverA, driverB],
+      [testConnection("ab", "a", "b")],
+      [driverA.id, driverB.id],
+    );
+
+    const solved = solveGearSystem(system, 0);
+
+    expect(solved.framesByGear.a).toMatchObject({
+      rpm: 10,
+      direction: "clockwise",
+    });
+    expect(solved.framesByGear.b).toMatchObject({
+      rpm: 10,
+      direction: "counterclockwise",
+    });
+  });
+
   it("algebraically inverts stored mesh tooth phase during reverse traversal", () => {
     const source = testGear("source", 0, 0, 60);
     const target = testGear("target", 40, 0, 20, {

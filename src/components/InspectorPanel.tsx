@@ -91,6 +91,10 @@ export function InspectorPanel({
       <div className="segmentedControl" aria-label="Direction">
         <button
           className={gear.direction === "clockwise" ? "selected" : ""}
+          disabled={!gear.isDriver}
+          title={
+            gear.isDriver ? undefined : "Direction is set by the driving gear"
+          }
           type="button"
           onClick={() => onDirectionChange("clockwise")}
         >
@@ -98,6 +102,10 @@ export function InspectorPanel({
         </button>
         <button
           className={gear.direction === "counterclockwise" ? "selected" : ""}
+          disabled={!gear.isDriver}
+          title={
+            gear.isDriver ? undefined : "Direction is set by the driving gear"
+          }
           type="button"
           onClick={() => onDirectionChange("counterclockwise")}
         >

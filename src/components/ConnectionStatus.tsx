@@ -2,8 +2,8 @@ import type { ConnectionValidationResult } from "../simulation/gear-geometry";
 import type { GearSystem } from "../simulation/gear-system";
 
 interface ConnectionStatusProps {
-  gearSystem: GearSystem;
-  validation: ConnectionValidationResult;
+  readonly gearSystem: GearSystem;
+  readonly validation: ConnectionValidationResult;
 }
 
 export function ConnectionStatus({
@@ -108,9 +108,15 @@ function formatConnectionIssues(
           return `mesh distance ${formatDistances(result)}`;
         case "compound-center":
           return `compound center ${formatDistances(result)}`;
+        default:
+          return assertUnreachableIssueCode(issueCode);
       }
     })
     .join("; ");
+}
+
+function assertUnreachableIssueCode(issueCode: never): string {
+  return `unrecognized issue "${String(issueCode)}"`;
 }
 
 function formatDistances(

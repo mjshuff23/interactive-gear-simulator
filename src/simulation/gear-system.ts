@@ -82,6 +82,8 @@ interface MotionEdge {
 
 const DEGREES_PER_ROTATION = 360;
 const SECONDS_PER_MINUTE = 60;
+const MOTION_RPM_RELATIVE_TOLERANCE = 1e-9;
+const MOTION_PHASE_TOLERANCE_DEGREES = 1e-6;
 const ARC_SECONDS_PER_ROTATION =
   DEGREES_PER_ROTATION * SECONDS_PER_MINUTE * SECONDS_PER_MINUTE;
 
@@ -137,18 +139,28 @@ export function solveGearSystem(
       continue;
     }
 
-    motions.set(driver.id, {
+    const seededMotion: PropagatedMotion = {
       rpm: driver.rpm,
       direction: driver.direction,
       toothPhaseReference: driver.angle + driver.phase,
-    });
+    };
+    const existingMotion = motions.get(driver.id);
+
+    if (existingMotion) {
+      if (!motionsAgree(existingMotion, seededMotion, driver)) {
+        jamReachableComponent(driver.id, adjacency, motions, jammedGearIds);
+      }
+      continue;
+    }
+
+    motions.set(driver.id, seededMotion);
     queue.push(driver.id);
   }
 
   while (queue.length > 0) {
     const sourceId = queue.shift();
 
-    if (!sourceId) {
+    if (!sourceId || jammedGearIds.has(sourceId)) {
       continue;
     }
 
@@ -162,7 +174,7 @@ export function solveGearSystem(
     for (const edge of adjacency.get(sourceId) ?? []) {
       const targetGear = gearsById.get(edge.targetGearId);
 
-      if (!targetGear || motions.has(targetGear.id)) {
+      if (!targetGear || jammedGearIds.has(targetGear.id)) {
         continue;
       }
 
@@ -170,6 +182,20 @@ export function solveGearSystem(
         edge.connection.kind === "compound"
           ? solveCompoundMotion(sourceMotion, edge)
           : solveMeshMotion(sourceGear, targetGear, sourceMotion, edge);
+      const existingMotion = motions.get(targetGear.id);
+
+      if (existingMotion) {
+        if (!motionsAgree(existingMotion, targetMotion, targetGear)) {
+          jamReachableComponent(
+            targetGear.id,
+            adjacency,
+            motions,
+            jammedGearIds,
+          );
+          break;
+        }
+        continue;
+      }
 
       motions.set(targetGear.id, targetMotion);
       queue.push(targetGear.id);
@@ -230,6 +256,56 @@ export function normalizeDegrees(angleDegrees: number): number {
   );
 }
 
+// Two drivers (or two propagation paths) agree when they demand the same
+// speed, the same direction while moving, and tooth phases that differ by a
+// whole number of tooth pitches — offsets of full teeth mesh identically.
+function motionsAgree(
+  a: PropagatedMotion,
+  b: PropagatedMotion,
+  gear: GearNode,
+): boolean {
+  const rpmScale = Math.max(Math.abs(a.rpm), Math.abs(b.rpm), 1);
+
+  if (Math.abs(a.rpm - b.rpm) > MOTION_RPM_RELATIVE_TOLERANCE * rpmScale) {
+    return false;
+  }
+
+  if ((a.rpm !== 0 || b.rpm !== 0) && a.direction !== b.direction) {
+    return false;
+  }
+
+  const toothPitch = DEGREES_PER_ROTATION / gear.teeth;
+  const phaseDifference =
+    Math.abs(a.toothPhaseReference - b.toothPhaseReference) % toothPitch;
+  const phaseMismatch = Math.min(phaseDifference, toothPitch - phaseDifference);
+
+  return phaseMismatch <= MOTION_PHASE_TOLERANCE_DEGREES;
+}
+
+function jamReachableComponent(
+  gearId: string,
+  adjacency: ReadonlyMap<string, MotionEdge[]>,
+  motions: Map<string, PropagatedMotion>,
+  jammedGearIds: Set<string>,
+): void {
+  const queue = [gearId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+
+    if (!currentId || jammedGearIds.has(currentId)) {
+      continue;
+    }
+
+    jammedGearIds.add(currentId);
+    motions.delete(currentId);
+
+    for (const edge of adjacency.get(currentId) ?? []) {
+      queue.push(edge.targetGearId);
+    }
+  }
+}
+
 function solveCompoundMotion(
   sourceMotion: PropagatedMotion,
   edge: MotionEdge,
@@ -245,6 +321,14 @@ function solveCompoundMotion(
   };
 }
 
+// Mesh phase invariant, in terms of the connection's stored endpoints:
+// toothPhaseReference(target) +
+//   meshRatio(source, target) * toothPhaseReference(source)
+// ~= edge.connection.phaseOffset.
+// Forward traversal solves for the target by multiplying the source phase by
+// meshRatio(sourceGear, targetGear); reverse traversal solves for the stored
+// source by dividing the residual by meshRatio(targetGear, sourceGear), which
+// is the same ratio once the traversal swap of source/target is undone.
 function solveMeshMotion(
   sourceGear: GearNode,
   targetGear: GearNode,

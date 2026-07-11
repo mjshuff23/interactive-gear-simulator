@@ -5,6 +5,7 @@ import {
   type ConnectionValidationResult,
 } from "../simulation/gear-geometry";
 import type {
+  GearConnection,
   GearNode,
   GearSystem,
   SolvedGearSystem,
@@ -318,55 +319,85 @@ function drawConnections(
       continue;
     }
 
-    const isValid =
-      validation.byConnectionId[connection.id]?.isGeometricallyValid ?? false;
-    const isJammed = isValid && jammedConnectionIds.has(connection.id);
+    drawConnection(
+      connections,
+      connection,
+      source,
+      target,
+      resolveConnectionDisplayStatus(
+        connection.id,
+        validation,
+        jammedConnectionIds,
+      ),
+    );
+  }
+}
 
-    if (!isValid) {
-      if (
-        source.position.x === target.position.x &&
-        source.position.y === target.position.y
-      ) {
-        drawDashedCircle(connections, source.position, 7, 0xd95d5d, 3);
-      } else {
-        drawDashedLine(
-          connections,
-          source.position,
-          target.position,
-          0xd95d5d,
-          3,
-        );
-      }
-      continue;
-    }
+type ConnectionDisplayStatus = "invalid" | "jammed" | "valid";
 
-    if (isJammed) {
-      if (connection.kind === "compound") {
-        drawDashedCircle(connections, source.position, 7, 0xd6a647, 3);
-      } else {
-        drawDashedLine(
-          connections,
-          source.position,
-          target.position,
-          0xd6a647,
-          3,
-        );
-      }
-      continue;
-    }
+function resolveConnectionDisplayStatus(
+  connectionId: string,
+  validation: ConnectionValidationResult,
+  jammedConnectionIds: ReadonlySet<string>,
+): ConnectionDisplayStatus {
+  if (!validation.byConnectionId[connectionId]?.isGeometricallyValid) {
+    return "invalid";
+  }
 
-    if (connection.kind === "compound") {
-      connections.circle(source.position.x, source.position.y, 7).stroke({
-        color: 0xe18f5a,
-        width: 3,
-        alpha: 0.75,
-      });
+  return jammedConnectionIds.has(connectionId) ? "jammed" : "valid";
+}
+
+function drawConnection(
+  connections: Graphics,
+  connection: GearConnection,
+  source: GearNode,
+  target: GearNode,
+  status: ConnectionDisplayStatus,
+) {
+  if (status === "invalid") {
+    if (
+      source.position.x === target.position.x &&
+      source.position.y === target.position.y
+    ) {
+      drawDashedCircle(connections, source.position, 7, 0xd95d5d, 3);
     } else {
-      connections
-        .moveTo(source.position.x, source.position.y)
-        .lineTo(target.position.x, target.position.y)
-        .stroke({ color: 0x6aa7c8, width: 2, alpha: 0.55 });
+      drawDashedLine(
+        connections,
+        source.position,
+        target.position,
+        0xd95d5d,
+        3,
+      );
     }
+    return;
+  }
+
+  if (status === "jammed") {
+    if (connection.kind === "compound") {
+      drawDashedCircle(connections, source.position, 7, 0xd6a647, 3);
+    } else {
+      drawDashedLine(
+        connections,
+        source.position,
+        target.position,
+        0xd6a647,
+        3,
+      );
+    }
+    return;
+  }
+
+  if (connection.kind === "compound") {
+    connections.circle(source.position.x, source.position.y, 7).stroke({
+      color: 0xe18f5a,
+      width: 3,
+      alpha: 0.75,
+    });
+  } else {
+    connections
+      .moveTo(source.position.x, source.position.y)
+      .lineTo(target.position.x, target.position.y)
+      .stroke({ color: 0x6aa7c8, width: 2, alpha: 0.55 });
   }
 }
 
