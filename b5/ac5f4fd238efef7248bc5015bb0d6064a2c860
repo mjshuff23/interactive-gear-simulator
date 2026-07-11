@@ -1,0 +1,21 @@
+docs/roadmap/issues/m2.5-geometric-mesh-validation.md
+  s_94f453708ff147::t_bc5bb4657071e1 1-44
+docs/roadmap/github-issues.md
+  s_94f453708ff147::t_65f088579f3b25 21-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "b5ac5f4fd238efef7248bc5015bb0d6064a2c860",
+  "prompts": {},
+  "sessions": {
+    "s_94f453708ff147": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8058443b-d6ec-4fd9-b711-fd6f573dbdf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
