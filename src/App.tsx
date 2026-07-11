@@ -44,7 +44,7 @@ export function App() {
     null,
   );
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authState] = useSupabaseAuth();
+  const [authState, authActions] = useSupabaseAuth();
   const [gearSystem, setGearSystem] = useState<GearSystem>(() =>
     DEFAULT_GUIDED_EXAMPLE.createSystem(),
   );
@@ -383,6 +383,8 @@ export function App() {
         <AuthModal
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
+          authState={authState}
+          authActions={authActions}
         />
         <SavedSystemsPanel
           currentSystem={gearSystem}

@@ -1,14 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSupabaseAuth } from "../auth/useSupabaseAuth";
+import type {
+  SupabaseAuthState,
+  SupabaseAuthActions,
+} from "../auth/useSupabaseAuth";
 import "./AuthModal.css";
 
 interface AuthModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
+  readonly authState: SupabaseAuthState;
+  readonly authActions: SupabaseAuthActions;
 }
 
-export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [authState, authActions] = useSupabaseAuth();
+export function AuthModal({
+  isOpen,
+  onClose,
+  authState,
+  authActions,
+}: AuthModalProps) {
   const [emailInput, setEmailInput] = useState("");
   const [otpInput, setOtpInput] = useState("");
 
@@ -47,10 +56,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
       }}
     >
-      <div
-        className="auth-modal-content"
-      >
-        <button className="auth-modal-close" onClick={onClose} aria-label="Close">
+      <div className="auth-modal-content">
+        <button
+          className="auth-modal-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
           &times;
         </button>
         <h2>Account & Cloud Saving</h2>
@@ -59,14 +70,17 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <p>Cloud saving is not configured in this environment.</p>
         )}
 
-        {authState.status === "restoring" && (
-          <p>Loading session...</p>
-        )}
+        {authState.status === "restoring" && <p>Loading session...</p>}
 
         {authState.status === "signed-in" && (
           <div className="auth-signed-in">
-            <p>Signed in as <strong>{authState.email}</strong></p>
-            <button className="primaryButton" onClick={() => authActions.signOut()}>
+            <p>
+              Signed in as <strong>{authState.email}</strong>
+            </p>
+            <button
+              className="primaryButton"
+              onClick={() => authActions.signOut()}
+            >
               Sign Out
             </button>
           </div>
@@ -100,7 +114,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               className="primaryButton"
               disabled={authState.status === "sending-otp" || !emailInput}
             >
-              {authState.status === "sending-otp" ? "Sending..." : "Send Verification Code"}
+              {authState.status === "sending-otp"
+                ? "Sending..."
+                : "Send Verification Code"}
             </button>
           </form>
         )}
@@ -109,7 +125,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           authState.status === "verifying-otp") && (
           <div className="auth-verify-step">
             <output>
-              A 6-digit code has been sent to <strong>{authState.email}</strong>.
+              A 6-digit code has been sent to <strong>{authState.email}</strong>
+              .
             </output>
             <form onSubmit={handleVerifyOtp} className="auth-form">
               <label htmlFor="otp-input">Verification Code</label>
@@ -129,14 +146,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 type="submit"
                 className="primaryButton"
-                disabled={authState.status === "verifying-otp" || otpInput.length !== 6}
+                disabled={
+                  authState.status === "verifying-otp" || otpInput.length !== 6
+                }
               >
-                {authState.status === "verifying-otp" ? "Verifying..." : "Verify Code"}
+                {authState.status === "verifying-otp"
+                  ? "Verifying..."
+                  : "Verify Code"}
               </button>
             </form>
 
             <button
-              onClick={() => authState.email && authActions.sendOtp(authState.email)}
+              onClick={() =>
+                authState.email && authActions.sendOtp(authState.email)
+              }
               disabled={authState.resendCooldown > 0}
               className="ghostButton"
             >

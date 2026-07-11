@@ -40,6 +40,7 @@ export function SavedSystemsPanel({
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [renameInput, setRenameInput] = useState<{
     id: string;
     name: string;
@@ -76,20 +77,24 @@ export function SavedSystemsPanel({
       return;
     }
     if (!client) return;
+    setActionError(null);
     try {
       const sys = await loadSavedGearSystem(client, id);
       onLoadSystem(sys);
     } catch (e: unknown) {
-      alert("Failed to load: " + (e instanceof Error ? e.message : "Unknown error"));
+      setActionError(
+        "Failed to load: " + (e instanceof Error ? e.message : "Unknown error"),
+      );
     }
   }
 
   async function handleSave() {
-    if (!client) {
+    if (!client || !isAuthed) {
       onRequestAuth();
       return;
     }
     setIsSaving(true);
+    setActionError(null);
     try {
       if (activeSavedSystemId) {
         // Find expected update time
@@ -107,7 +112,7 @@ export function SavedSystemsPanel({
           await loadList();
         } catch (e: unknown) {
           if (e instanceof PersistenceException && e.type === "STALE_WRITE") {
-            alert("Stale write: The system was updated elsewhere.");
+            setActionError("Stale write: The system was updated elsewhere.");
             await loadList();
           } else {
             throw e;
@@ -119,24 +124,29 @@ export function SavedSystemsPanel({
         await loadList();
       }
     } catch (e: unknown) {
-      alert("Failed to save: " + (e instanceof Error ? e.message : String(e)));
+      setActionError(
+        "Failed to save: " + (e instanceof Error ? e.message : String(e)),
+      );
     } finally {
       setIsSaving(false);
     }
   }
 
   async function handleSaveAsCopy() {
-    if (!client) {
+    if (!client || !isAuthed) {
       onRequestAuth();
       return;
     }
     setIsSaving(true);
+    setActionError(null);
     try {
       const created = await createSavedGearSystem(client, currentSystem);
       onSaveSuccess(created);
       await loadList();
     } catch (e: unknown) {
-      alert("Failed to save copy: " + (e instanceof Error ? e.message : String(e)));
+      setActionError(
+        "Failed to save copy: " + (e instanceof Error ? e.message : String(e)),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -151,18 +161,22 @@ export function SavedSystemsPanel({
     if (!window.confirm(`Are you sure you want to delete "${name}"?`)) {
       return;
     }
+    setActionError(null);
     try {
       await deleteSavedGearSystem(client, id, expectedUpdatedAt);
       onDeleteSuccess(id);
       await loadList();
     } catch (e: unknown) {
-      alert("Failed to delete: " + (e instanceof Error ? e.message : String(e)));
+      setActionError(
+        "Failed to delete: " + (e instanceof Error ? e.message : String(e)),
+      );
     }
   }
 
   async function handleRenameSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!client || !renameInput) return;
+    setActionError(null);
     try {
       const existing = systems.find((s) => s.id === renameInput.id);
       if (!existing) throw new Error("System not found");
@@ -176,7 +190,9 @@ export function SavedSystemsPanel({
       setRenameInput(null);
       await loadList();
     } catch (e: unknown) {
-      alert("Failed to rename: " + (e instanceof Error ? e.message : String(e)));
+      setActionError(
+        "Failed to rename: " + (e instanceof Error ? e.message : String(e)),
+      );
     }
   }
 
@@ -185,31 +201,27 @@ export function SavedSystemsPanel({
   return (
     <div className="saved-systems-panel">
       <div className="actions-bar">
-        <button
-          onClick={handleSave}
-          disabled={isSaving || config.status !== "ready"}
-        >
+        <button onClick={handleSave} disabled={isSaving}>
           {saveButtonLabel}
         </button>
         {activeSavedSystemId && (
-          <button
-            onClick={handleSaveAsCopy}
-            disabled={isSaving || config.status !== "ready"}
-          >
+          <button onClick={handleSaveAsCopy} disabled={isSaving}>
             Save as copy
           </button>
         )}
       </div>
 
+      {actionError && (
+        <div className="action-error" role="alert">
+          {actionError}
+        </div>
+      )}
+
       <div className="systems-list">
         <h3>Your Library</h3>
         {!isAuthed && config.status === "ready" && (
           <p>
-            <button
-              type="button"
-              className="textLink"
-              onClick={onRequestAuth}
-            >
+            <button type="button" className="textLink" onClick={onRequestAuth}>
               Sign in
             </button>{" "}
             to view and save to your library.
