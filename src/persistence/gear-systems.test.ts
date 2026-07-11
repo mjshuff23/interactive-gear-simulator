@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GearSupabaseClient } from "../lib/supabase";
-import { createStarterSystem } from "../data/starter-system";
+import { DEFAULT_GUIDED_EXAMPLE } from "../data/guided-examples";
 import { loadGearSystems, saveGearSystem } from "./gear-systems";
 
 describe("gear system persistence", () => {
@@ -21,8 +21,8 @@ describe("gear system persistence", () => {
             select: () => ({
               single: async () => ({
                 data: {
-                  id: "starter-clock-train",
-                  name: "Clock Train Harmonics",
+                  id: "guided-clock-train",
+                  name: "Idealized Clock-Hand Ratio Train",
                   updated_at: "2026-07-10T00:00:00.000Z",
                 },
                 error: null,
@@ -33,18 +33,18 @@ describe("gear system persistence", () => {
       }),
     } as unknown as GearSupabaseClient;
 
-    await saveGearSystem(client, createStarterSystem());
+    await saveGearSystem(client, DEFAULT_GUIDED_EXAMPLE.createSystem());
 
     expect(upsertPayloads[0]).toMatchObject({
-      id: "starter-clock-train",
+      id: "guided-clock-train",
       owner_id: "user-1",
-      name: "Clock Train Harmonics",
+      name: "Idealized Clock-Hand Ratio Train",
     });
     expect(upsertPayloads[0]).not.toHaveProperty("updated_at");
   });
 
   it("loads valid systems with row-level updated_at and skips malformed definitions", async () => {
-    const validSystem = createStarterSystem();
+    const validSystem = DEFAULT_GUIDED_EXAMPLE.createSystem();
     const rowUpdatedAt = "2026-07-10T01:00:00.000Z";
     const client = {
       from: () => ({
