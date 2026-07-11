@@ -1,28 +1,22 @@
 import { describe, expect, it } from "vitest";
 import type { GearSupabaseClient } from "../lib/supabase";
 import { DEFAULT_GUIDED_EXAMPLE } from "../data/guided-examples";
-import { loadGearSystems, saveGearSystem } from "./gear-systems";
+import { loadSavedGearSystem, createSavedGearSystem } from "./gear-systems";
 
 describe("gear system persistence", () => {
-  it("saves without client-managed updated_at", async () => {
-    const upsertPayloads: unknown[] = [];
+  it("creates without client-managed updated_at", async () => {
+    const insertPayloads: unknown[] = [];
     const client = {
-      auth: {
-        getUser: async () => ({
-          data: { user: { id: "user-1" } },
-          error: null,
-        }),
-      },
       from: () => ({
-        upsert: (payload: unknown) => {
-          upsertPayloads.push(payload);
-
+        insert: (payload: unknown) => {
+          insertPayloads.push(payload);
           return {
             select: () => ({
               single: async () => ({
                 data: {
-                  id: "guided-clock-train",
+                  id: "123",
                   name: "Idealized Clock-Hand Ratio Train",
+                  created_at: "2026-07-10T00:00:00.000Z",
                   updated_at: "2026-07-10T00:00:00.000Z",
                 },
                 error: null,
@@ -33,54 +27,74 @@ describe("gear system persistence", () => {
       }),
     } as unknown as GearSupabaseClient;
 
-    await saveGearSystem(client, DEFAULT_GUIDED_EXAMPLE.createSystem());
+    await createSavedGearSystem(client, DEFAULT_GUIDED_EXAMPLE.createSystem());
 
-    expect(upsertPayloads[0]).toMatchObject({
-      id: "guided-clock-train",
-      owner_id: "user-1",
+    expect(insertPayloads[0]).toMatchObject({
       name: "Idealized Clock-Hand Ratio Train",
     });
-    expect(upsertPayloads[0]).not.toHaveProperty("updated_at");
+    expect(insertPayloads[0]).not.toHaveProperty("updated_at");
+    expect(insertPayloads[0]).not.toHaveProperty("owner_id");
   });
 
-  it("loads valid systems with row-level updated_at and skips malformed definitions", async () => {
+  it("loads valid systems with row-level updated_at", async () => {
     const validSystem = DEFAULT_GUIDED_EXAMPLE.createSystem();
     const rowUpdatedAt = "2026-07-10T01:00:00.000Z";
     const client = {
       from: () => ({
         select: () => ({
-          order: async () => ({
-            data: [
-              {
+          eq: () => ({
+            single: async () => ({
+              data: {
                 id: validSystem.id,
                 name: validSystem.name,
+                definition_version: 1,
                 definition: {
                   ...validSystem,
-                  updatedAt: "2026-07-07T00:00:00.000Z",
+                  updatedAt: "2026-07-07T00:00:00.000Z", // should be overwritten
                 },
+                created_at: "2026-07-10T00:00:00.000Z",
                 updated_at: rowUpdatedAt,
               },
-              {
-                id: "broken",
-                name: "Broken",
-                definition: { id: "" },
-                updated_at: rowUpdatedAt,
-              },
-            ],
-            error: null,
+              error: null,
+            }),
           }),
         }),
       }),
     } as unknown as GearSupabaseClient;
 
-    const systems = await loadGearSystems(client);
-
-    expect(systems).toHaveLength(1);
-    expect(systems[0].id).toBe(validSystem.id);
-    expect(systems[0].updatedAt).toBe(rowUpdatedAt);
+    const system = await loadSavedGearSystem(client, validSystem.id);
+    expect(system.id).toBe(validSystem.id);
+    expect(system.updatedAt).toBe(rowUpdatedAt);
   });
 
-  it("skips legacy definitions with persisted derived geometry", async () => {
+  it("rejects unsupported definition version", async () => {
+    const validSystem = DEFAULT_GUIDED_EXAMPLE.createSystem();
+    const client = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            single: async () => ({
+              data: {
+                id: validSystem.id,
+                name: validSystem.name,
+                definition_version: 2,
+                definition: validSystem,
+                created_at: "2026-07-10T00:00:00.000Z",
+                updated_at: "2026-07-10T00:00:00.000Z",
+              },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    } as unknown as GearSupabaseClient;
+
+    await expect(loadSavedGearSystem(client, validSystem.id)).rejects.toThrow(
+      "Unsupported definition version",
+    );
+  });
+
+  it("rejects legacy definitions with persisted derived geometry", async () => {
     const validSystem = DEFAULT_GUIDED_EXAMPLE.createSystem();
     const legacySystem = {
       ...validSystem,
@@ -91,24 +105,29 @@ describe("gear system persistence", () => {
         index === 0 ? { ...connection, ratio: 3 } : connection,
       ),
     };
+
     const client = {
       from: () => ({
         select: () => ({
-          order: async () => ({
-            data: [
-              {
+          eq: () => ({
+            single: async () => ({
+              data: {
                 id: legacySystem.id,
                 name: legacySystem.name,
+                definition_version: 1,
                 definition: legacySystem,
-                updated_at: legacySystem.updatedAt,
+                created_at: "2026-07-10T00:00:00.000Z",
+                updated_at: "2026-07-10T00:00:00.000Z",
               },
-            ],
-            error: null,
+              error: null,
+            }),
           }),
         }),
       }),
     } as unknown as GearSupabaseClient;
 
-    await expect(loadGearSystems(client)).resolves.toEqual([]);
+    await expect(
+      loadSavedGearSystem(client, legacySystem.id),
+    ).rejects.toThrow();
   });
 });

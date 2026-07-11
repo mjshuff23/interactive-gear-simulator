@@ -1,0 +1,102 @@
+.saved-systems-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-bottom: 1px solid var(--panel-border, #444);
+  background-color: var(--panel-bg, #222);
+  color: var(--text-color, #eee);
+  font-family: sans-serif;
+  font-size: 0.9rem;
+}
+
+.saved-systems-panel .actions-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.saved-systems-panel button {
+  padding: 0.5rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background-color: #333;
+  color: #fff;
+  cursor: pointer;
+}
+
+.saved-systems-panel button:hover:not(:disabled) {
+  background-color: #444;
+}
+
+.saved-systems-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.systems-list h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.system-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: #2a2a2a;
+}
+
+.system-item.active {
+  border-color: #007bff;
+}
+
+.system-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.system-info strong {
+  font-weight: bold;
+}
+
+.system-info span {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.system-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rename-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rename-form input {
+  flex-grow: 1;
+  padding: 0.25rem;
+  background: #111;
+  border: 1px solid #555;
+  color: #fff;
+}
+
+.textLink {
+  background: none !important;
+  border: none !important;
+  color: #007bff !important;
+  padding: 0 !important;
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  display: inline;
+}
+
+.textLink:hover {
+  color: #0056b3 !important;
+}
