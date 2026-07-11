@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import type {
   GearNode,
   RotationDirection,
@@ -51,86 +53,48 @@ export function InspectorPanel({
         </select>
       </label>
 
-      <label className="field">
-        <span>Teeth</span>
-        <input
-          min={6}
-          max={120}
-          type="number"
-          value={gear.teeth}
-          onChange={(event) => {
-            const teeth = parseClampedNumber(event.target.value, 6, 120);
+      <NumericField
+        key={`${gear.id}-teeth`}
+        label="Teeth"
+        max={120}
+        min={6}
+        value={gear.teeth}
+        onCommit={(teeth) =>
+          onChange({
+            teeth,
+            radius: clampNumber(teeth * 1.9, 28, 160),
+          })
+        }
+      />
 
-            if (teeth === null) {
-              return;
-            }
+      <NumericField
+        key={`${gear.id}-radius`}
+        label="Radius"
+        max={160}
+        min={24}
+        value={Math.round(gear.radius)}
+        onCommit={(radius) => onChange({ radius })}
+      />
 
-            onChange({
-              teeth,
-              radius: clampNumber(teeth * 1.9, 28, 160),
-            });
-          }}
-        />
-      </label>
+      <NumericField
+        key={`${gear.id}-rpm`}
+        disabled={!gear.isDriver}
+        label="RPM"
+        max={60}
+        min={0}
+        step={0.25}
+        value={gear.rpm}
+        onCommit={(rpm) => onChange({ rpm })}
+      />
 
-      <label className="field">
-        <span>Radius</span>
-        <input
-          min={24}
-          max={160}
-          type="number"
-          value={Math.round(gear.radius)}
-          onChange={(event) => {
-            const radius = parseClampedNumber(event.target.value, 24, 160);
-
-            if (radius === null) {
-              return;
-            }
-
-            onChange({ radius });
-          }}
-        />
-      </label>
-
-      <label className="field">
-        <span>RPM</span>
-        <input
-          disabled={!gear.isDriver}
-          max={60}
-          min={0}
-          step={0.25}
-          type="number"
-          value={gear.rpm}
-          onChange={(event) => {
-            const rpm = parseClampedNumber(event.target.value, 0, 60);
-
-            if (rpm === null) {
-              return;
-            }
-
-            onChange({ rpm });
-          }}
-        />
-      </label>
-
-      <label className="field">
-        <span>Phase</span>
-        <input
-          max={360}
-          min={0}
-          type="number"
-          value={gear.phase}
-          onChange={(event) => {
-            const phase = parseClampedNumber(event.target.value, 0, 360);
-
-            if (phase === null) {
-              return;
-            }
-
-            onChange({ phase });
-          }}
-        />
-      </label>
+      <NumericField
+        key={`${gear.id}-phase`}
+        label="Phase"
+        max={360}
+        min={0}
+        value={gear.phase}
+        onCommit={(phase) => onChange({ phase })}
+      />
 
       <div className="segmentedControl" aria-label="Direction">
         <button
@@ -170,12 +134,16 @@ export function InspectorPanel({
       <div className="readoutGrid">
         <div>
           <span>Resolved RPM</span>
-          <strong>{solvedFrame?.rpm.toFixed(2) ?? "0.00"}</strong>
+          <strong>{solvedFrame?.rpm.toFixed(2) ?? "—"}</strong>
         </div>
         <div>
           <span>Direction</span>
           <strong>
-            {solvedFrame?.direction === "clockwise" ? "CW" : "CCW"}
+            {solvedFrame === undefined
+              ? "—"
+              : solvedFrame.direction === "clockwise"
+                ? "CW"
+                : "CCW"}
           </strong>
         </div>
       </div>
@@ -183,18 +151,75 @@ export function InspectorPanel({
   );
 }
 
-function parseClampedNumber(
-  value: string,
-  minimum: number,
-  maximum: number,
-): number | null {
+interface NumericFieldProps {
+  disabled?: boolean;
+  label: string;
+  max: number;
+  min: number;
+  step?: number;
+  value: number;
+  onCommit: (value: number) => void;
+}
+
+function NumericField({
+  disabled,
+  label,
+  max,
+  min,
+  step,
+  value,
+  onCommit,
+}: NumericFieldProps) {
+  // Draft holds in-progress text so partial entries (e.g. "1" while typing
+  // "15") are not clamped and written back mid-edit; clamping happens on blur.
+  const [draft, setDraft] = useState<string | null>(null);
+
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <input
+        disabled={disabled}
+        max={max}
+        min={min}
+        step={step}
+        type="number"
+        value={draft ?? value}
+        onBlur={() => {
+          if (draft === null) {
+            return;
+          }
+
+          const parsed = parseFiniteNumber(draft);
+
+          if (parsed !== null) {
+            onCommit(clampNumber(parsed, min, max));
+          }
+
+          setDraft(null);
+        }}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+
+          const parsed = parseFiniteNumber(next);
+
+          if (parsed !== null && parsed >= min && parsed <= max) {
+            onCommit(parsed);
+          }
+        }}
+      />
+    </label>
+  );
+}
+
+function parseFiniteNumber(value: string): number | null {
   if (value.trim() === "") {
     return null;
   }
 
   const parsed = Number(value);
 
-  return Number.isFinite(parsed) ? clampNumber(parsed, minimum, maximum) : null;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function clampNumber(value: number, minimum: number, maximum: number): number {

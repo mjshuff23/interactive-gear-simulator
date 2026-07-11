@@ -27,7 +27,7 @@ classDiagram
   class GearSystem {
     string id
     string name
-    60 base
+    number base
     string units
     GearNode[] gears
     GearConnection[] connections
@@ -73,6 +73,9 @@ classDiagram
   GearSystem "1" --> "*" GearConnection
   GearNode "1" --> "1" SimulationFrame
 ```
+
+`GearSystem.base` is fixed at `60` in v1 (the schema declares it as a literal);
+it drives the base-60 degree-minute-second angle readouts.
 
 ## Simulation Loop
 
