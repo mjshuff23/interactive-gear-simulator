@@ -120,6 +120,14 @@ export function App() {
       return;
     }
 
+    const hasChanges = Object.entries(updates).some(
+      ([key, value]) => !Object.is(selectedGear[key as keyof GearNode], value),
+    );
+
+    if (!hasChanges) {
+      return;
+    }
+
     setGearSystem((current) => ({
       ...current,
       updatedAt: new Date().toISOString(),

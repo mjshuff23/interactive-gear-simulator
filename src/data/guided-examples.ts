@@ -396,6 +396,7 @@ export const GUIDED_EXAMPLES: readonly GuidedExampleDefinition[] = [
       "Minute → second: 60× angular speed",
       "Hour → second: 720× angular speed",
       "Idealized ratio train; not a complete clock escapement",
+      "Runs at real clock speed: the 6T second pinion turns once per minute; the hour wheel once per 12 hours",
     ],
     defaultSelectedGearId: "second-pinion",
     createSystem: createClockTrainSystem,
