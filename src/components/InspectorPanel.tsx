@@ -88,30 +88,17 @@ export function InspectorPanel({
         onCommit={(phase) => onChange({ phase })}
       />
 
-      <div className="segmentedControl" aria-label="Direction">
-        <button
-          className={gear.direction === "clockwise" ? "selected" : ""}
-          disabled={!gear.isDriver}
-          title={
-            gear.isDriver ? undefined : "Direction is set by the driving gear"
-          }
-          type="button"
-          onClick={() => onDirectionChange("clockwise")}
-        >
-          CW
-        </button>
-        <button
-          className={gear.direction === "counterclockwise" ? "selected" : ""}
-          disabled={!gear.isDriver}
-          title={
-            gear.isDriver ? undefined : "Direction is set by the driving gear"
-          }
-          type="button"
-          onClick={() => onDirectionChange("counterclockwise")}
-        >
-          CCW
-        </button>
-      </div>
+      <DirectionControl
+        gear={gear}
+        solvedFrame={solvedFrame}
+        onDirectionChange={onDirectionChange}
+      />
+
+      {gear.isDriver ? null : (
+        <p className="muted">
+          Followers inherit speed and direction from the driving gear.
+        </p>
+      )}
 
       <label className="field inlineField">
         <span>Locked axle</span>
@@ -148,6 +135,44 @@ export function InspectorPanel({
         </div>
       </div>
     </section>
+  );
+}
+
+interface DirectionControlProps {
+  gear: GearNode;
+  onDirectionChange: (direction: RotationDirection) => void;
+  solvedFrame: SimulationFrame | undefined;
+}
+
+// Only driver gears own their direction; followers run whichever way the
+// mesh dictates, so their control is read-only and mirrors the solver's
+// resolved direction instead of the stored (editable) field.
+function DirectionControl({
+  gear,
+  onDirectionChange,
+  solvedFrame,
+}: DirectionControlProps) {
+  const displayedDirection = gear.isDriver
+    ? gear.direction
+    : (solvedFrame?.direction ?? gear.direction);
+
+  return (
+    <div className="segmentedControl" aria-label="Direction">
+      {(["clockwise", "counterclockwise"] as const).map((direction) => (
+        <button
+          key={direction}
+          className={displayedDirection === direction ? "selected" : ""}
+          disabled={!gear.isDriver}
+          title={
+            gear.isDriver ? undefined : "Direction is set by the driving gear"
+          }
+          type="button"
+          onClick={() => onDirectionChange(direction)}
+        >
+          {direction === "clockwise" ? "CW" : "CCW"}
+        </button>
+      ))}
+    </div>
   );
 }
 
