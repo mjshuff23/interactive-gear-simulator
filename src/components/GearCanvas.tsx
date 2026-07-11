@@ -107,6 +107,7 @@ export function GearCanvas({
 
   useEffect(() => {
     let destroyed = false;
+    let initialized = false;
     const app = new Application();
     const gearDisplays = gearDisplaysRef.current;
     appRef.current = app;
@@ -120,6 +121,8 @@ export function GearCanvas({
         resolution: window.devicePixelRatio || 1,
         autoDensity: true,
       });
+
+      initialized = true;
 
       if (destroyed || !hostRef.current) {
         app.destroy();
@@ -145,7 +148,14 @@ export function GearCanvas({
       destroyed = true;
       gearDisplays.clear();
       layersRef.current = null;
-      app.destroy(true);
+
+      // Destroying before the async init() resolves throws inside Pixi and
+      // blanks the app; a pre-init unmount is instead handled by the
+      // `destroyed` check in initPixi once init completes.
+      if (initialized) {
+        app.destroy(true);
+      }
+
       appRef.current = null;
     };
   }, []);
