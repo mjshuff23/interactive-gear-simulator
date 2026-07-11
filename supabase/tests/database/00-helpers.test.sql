@@ -1,6 +1,6 @@
 begin;
 
-select plan(0);
+select plan(1);
 
 create schema if not exists tests;
 
@@ -49,8 +49,10 @@ begin
 end;
 $$ language plpgsql;
 
+select pass('test helper functions created');
+
 select * from finish();
 
--- IMPORTANT: We COMMIT instead of ROLLBACK here so that the 'tests' schema 
+-- IMPORTANT: We COMMIT instead of ROLLBACK here so that the 'tests' schema
 -- and its functions persist for the subsequent test files!
 commit;
