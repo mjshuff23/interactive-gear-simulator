@@ -49,6 +49,11 @@ begin
 end;
 $$ language plpgsql;
 
+-- Tests switch role mid-script (anon/authenticated), so those roles need to
+-- be able to call back into the tests schema regardless of current role.
+grant usage on schema tests to anon, authenticated, service_role;
+grant execute on all functions in schema tests to anon, authenticated, service_role;
+
 select pass('test helper functions created');
 
 select * from finish();
