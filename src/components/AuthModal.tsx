@@ -126,7 +126,7 @@ export function AuthModal({
           <div className="auth-verify-step">
             <output>
               A 6-digit code has been sent to <strong>{authState.email}</strong>
-              .
+              {"."}
             </output>
             <form onSubmit={handleVerifyOtp} className="auth-form">
               <label htmlFor="otp-input">Verification Code</label>
