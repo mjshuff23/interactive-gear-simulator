@@ -10,9 +10,15 @@ import {
   Trash2,
 } from "lucide-react";
 import { GearCanvas } from "./components/GearCanvas";
+import { GuidedExampleExplanation } from "./components/GuidedExampleExplanation";
+import { GuidedExampleSelector } from "./components/GuidedExampleSelector";
 import { InspectorPanel } from "./components/InspectorPanel";
 import { VisualizationPanel } from "./components/VisualizationPanel";
-import { createStarterSystem } from "./data/starter-system";
+import {
+  DEFAULT_GUIDED_EXAMPLE,
+  getGuidedExample,
+  type GuidedExampleId,
+} from "./data/guided-examples";
 import {
   formatSexagesimalAngle,
   solveGearSystem,
@@ -24,19 +30,56 @@ import {
 const SIMULATION_STEP_SECONDS = 1 / 30;
 
 export function App() {
-  const [gearSystem, setGearSystem] = useState<GearSystem>(() =>
-    createStarterSystem(),
+  const [activeExampleId, setActiveExampleId] = useState<GuidedExampleId>(
+    DEFAULT_GUIDED_EXAMPLE.id,
   );
-  const [selectedGearId, setSelectedGearId] = useState("minute");
+  const [gearSystem, setGearSystem] = useState<GearSystem>(() =>
+    DEFAULT_GUIDED_EXAMPLE.createSystem(),
+  );
+  const [selectedGearId, setSelectedGearId] = useState(
+    DEFAULT_GUIDED_EXAMPLE.defaultSelectedGearId,
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeTool, setActiveTool] = useState<
     "select" | "gear" | "connect" | "pan"
   >("select");
+  const [isDirty, setIsDirty] = useState(false);
   const elapsedSecondsRef = useRef(elapsedSeconds);
   const nextGeneratedGearIndexRef = useRef(
     getNextGeneratedGearIndex(gearSystem.gears),
   );
+  const activeExample = getGuidedExample(activeExampleId);
+
+  function loadGuidedExample(exampleId: GuidedExampleId): boolean {
+    if (exampleId === activeExampleId) {
+      return true;
+    }
+
+    if (
+      isDirty &&
+      !window.confirm(
+        "Loading another guided example will replace your unsaved changes to the current canvas. Continue?",
+      )
+    ) {
+      return false;
+    }
+
+    const example = getGuidedExample(exampleId);
+    const system = example.createSystem();
+
+    setActiveExampleId(example.id);
+    setGearSystem(system);
+    setSelectedGearId(example.defaultSelectedGearId);
+    setIsPlaying(false);
+    setElapsedSeconds(0);
+    elapsedSecondsRef.current = 0;
+    setActiveTool("select");
+    nextGeneratedGearIndexRef.current = getNextGeneratedGearIndex(system.gears);
+    setIsDirty(false);
+
+    return true;
+  }
 
   useEffect(() => {
     elapsedSecondsRef.current = elapsedSeconds;
@@ -77,6 +120,14 @@ export function App() {
       return;
     }
 
+    const hasChanges = Object.entries(updates).some(
+      ([key, value]) => !Object.is(selectedGear[key as keyof GearNode], value),
+    );
+
+    if (!hasChanges) {
+      return;
+    }
+
     setGearSystem((current) => ({
       ...current,
       updatedAt: new Date().toISOString(),
@@ -84,6 +135,7 @@ export function App() {
         gear.id === selectedGear.id ? { ...gear, ...updates } : gear,
       ),
     }));
+    setIsDirty(true);
   }
 
   function addGear() {
@@ -116,6 +168,7 @@ export function App() {
     }));
     setSelectedGearId(id);
     setActiveTool("select");
+    setIsDirty(true);
   }
 
   function removeSelectedGear() {
@@ -144,6 +197,7 @@ export function App() {
     setSelectedGearId((currentSelectedGearId) =>
       currentSelectedGearId === gearIdToRemove ? "" : currentSelectedGearId,
     );
+    setIsDirty(true);
   }
 
   function moveGear(gearId: string, position: GearNode["position"]) {
@@ -154,6 +208,7 @@ export function App() {
         gear.id === gearId ? { ...gear, position } : gear,
       ),
     }));
+    setIsDirty(true);
   }
 
   function setDirection(direction: RotationDirection) {
@@ -212,6 +267,10 @@ export function App() {
             </p>
           </div>
           <div className="topBarActions">
+            <GuidedExampleSelector
+              activeExampleId={activeExampleId}
+              onSelectExample={loadGuidedExample}
+            />
             <button
               className="ghostButton"
               disabled
@@ -231,6 +290,8 @@ export function App() {
             </button>
           </div>
         </header>
+
+        <GuidedExampleExplanation example={activeExample} />
 
         <div className="canvasPanel">
           <GearCanvas

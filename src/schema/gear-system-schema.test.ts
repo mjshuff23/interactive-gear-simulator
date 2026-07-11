@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createStarterSystem } from "../data/starter-system";
+import { DEFAULT_GUIDED_EXAMPLE } from "../data/guided-examples";
 import { gearSystemSchema } from "./gear-system-schema";
 
 describe("gearSystemSchema", () => {
   it("rejects duplicate gear ids", () => {
-    const system = createStarterSystem();
+    const system = DEFAULT_GUIDED_EXAMPLE.createSystem();
     const duplicateId = system.gears[0].id;
 
     const result = gearSystemSchema.safeParse({
