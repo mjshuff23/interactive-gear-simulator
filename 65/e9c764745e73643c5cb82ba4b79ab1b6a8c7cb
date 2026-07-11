@@ -1,0 +1,24 @@
+supabase/tests/database/gear_systems_rls.test.sql
+  s_107b7b5aac1bab::t_dc1b862fdced5f 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "65e9c764745e73643c5cb82ba4b79ab1b6a8c7cb",
+  "prompts": {},
+  "humans": {
+    "h_d7f45408b008e1": {
+      "author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_107b7b5aac1bab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3cb2186-3de5-4215-86d8-15d79a0a9bf3",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
