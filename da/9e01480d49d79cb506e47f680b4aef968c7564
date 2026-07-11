@@ -1,0 +1,21 @@
+src/components/InspectorPanel.tsx
+  s_f9271192d339ea::t_012c736ad2ddae 180-186
+  s_f9271192d339ea::t_92f75a4a5ed464 11-16
+  s_f9271192d339ea::t_69ba18729ebe5a 142-144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "da9e01480d49d79cb506e47f680b4aef968c7564",
+  "prompts": {},
+  "sessions": {
+    "s_f9271192d339ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "913a9c1a-1913-4367-9386-36920053fe36",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
