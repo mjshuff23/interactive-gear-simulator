@@ -37,10 +37,8 @@ describe("AuthModal", () => {
       />,
     );
     // The dialog should not have the `open` attribute natively
-    const dialog = screen.queryByRole("dialog", { hidden: true });
-    if (dialog) {
-      expect(dialog).not.toHaveAttribute("open");
-    }
+    const dialog = screen.getByRole("dialog", { hidden: true });
+    expect(dialog).not.toHaveAttribute("open");
   });
 
   it("renders when isOpen is true and shows unconfigured message", () => {
