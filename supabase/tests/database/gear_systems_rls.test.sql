@@ -1,5 +1,5 @@
 begin;
-select plan(29);
+select plan(26);
 
 -- Setup users
 select tests.create_supabase_user('user1');
