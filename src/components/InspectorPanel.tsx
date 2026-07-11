@@ -8,12 +8,12 @@ import type {
 } from "../simulation/gear-system";
 
 interface InspectorPanelProps {
-  gear: GearNode | undefined;
-  gears: GearNode[];
-  onChange: (updates: Partial<GearNode>) => void;
-  onDirectionChange: (direction: RotationDirection) => void;
-  onSelectGear: (gearId: string) => void;
-  solvedFrame: SimulationFrame | undefined;
+  readonly gear: GearNode | undefined;
+  readonly gears: GearNode[];
+  readonly onChange: (updates: Partial<GearNode>) => void;
+  readonly onDirectionChange: (direction: RotationDirection) => void;
+  readonly onSelectGear: (gearId: string) => void;
+  readonly solvedFrame: SimulationFrame | undefined;
 }
 
 export function InspectorPanel({
@@ -139,9 +139,9 @@ export function InspectorPanel({
 }
 
 interface DirectionControlProps {
-  gear: GearNode;
-  onDirectionChange: (direction: RotationDirection) => void;
-  solvedFrame: SimulationFrame | undefined;
+  readonly gear: GearNode;
+  readonly onDirectionChange: (direction: RotationDirection) => void;
+  readonly solvedFrame: SimulationFrame | undefined;
 }
 
 // Only driver gears own their direction; followers run whichever way the
@@ -177,13 +177,13 @@ function DirectionControl({
 }
 
 interface NumericFieldProps {
-  disabled?: boolean;
-  label: string;
-  max: number;
-  min: number;
-  step?: number;
-  value: number;
-  onCommit: (value: number) => void;
+  readonly disabled?: boolean;
+  readonly label: string;
+  readonly max: number;
+  readonly min: number;
+  readonly step?: number;
+  readonly value: number;
+  readonly onCommit: (value: number) => void;
 }
 
 function NumericField({
