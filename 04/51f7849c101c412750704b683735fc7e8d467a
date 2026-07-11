@@ -1,0 +1,21 @@
+src/simulation/gear-geometry.ts
+  s_f9271192d339ea::t_04a85c3fc6dce2 192-194,196-199,201,206,208-215,217-218,220-222,224-225,227-232,234-237,240-252
+  s_f9271192d339ea::t_2297928880871c 203,205
+  s_f9271192d339ea::t_a3657704e3563f 195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "0451f7849c101c412750704b683735fc7e8d467a",
+  "prompts": {},
+  "sessions": {
+    "s_f9271192d339ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "913a9c1a-1913-4367-9386-36920053fe36",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
