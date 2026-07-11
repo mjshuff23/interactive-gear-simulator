@@ -170,8 +170,10 @@ function NumericField({
   value,
   onCommit,
 }: NumericFieldProps) {
-  // Draft holds in-progress text so partial entries (e.g. "1" while typing
-  // "15") are not clamped and written back mid-edit; clamping happens on blur.
+  // In-range values commit on every keystroke so the canvas responds live
+  // (and the native stepper arrows work). The draft only shields in-progress
+  // text that is out of range (e.g. "1" while typing "15") from being clamped
+  // and written back mid-edit; blur clamps and reconciles the final value.
   const [draft, setDraft] = useState<string | null>(null);
 
   return (
@@ -192,7 +194,11 @@ function NumericField({
           const parsed = parseFiniteNumber(draft);
 
           if (parsed !== null) {
-            onCommit(clampNumber(parsed, min, max));
+            const clamped = clampNumber(parsed, min, max);
+
+            if (clamped !== value) {
+              onCommit(clamped);
+            }
           }
 
           setDraft(null);
