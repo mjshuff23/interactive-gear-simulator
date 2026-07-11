@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo "Running formatter before push..."
+
+# Run the format script
+pnpm format:write
+
+# Check if any tracked files were modified by the formatter
+if ! git diff --quiet; then
+  echo ""
+  echo "❌ Push rejected: Formatting changed some files."
+  echo "Please review the formatted changes, commit them, and try pushing again."
+  exit 1
+fi
+
+echo "✅ Formatting check passed!"
+exit 0
