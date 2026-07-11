@@ -189,47 +189,67 @@ function findBestSnapCandidate(
   const candidates: SnapCandidate[] = [];
 
   for (const connection of system.connections) {
-    if (connection.kind !== "mesh") {
-      continue;
-    }
+    const candidate = evaluateSnapCandidate(
+      connection,
+      gearsById,
+      movingGearIds,
+    );
 
-    const source = gearsById.get(connection.sourceGearId);
-    const target = gearsById.get(connection.targetGearId);
-
-    if (!source || !target || source.id === target.id) {
-      continue;
-    }
-
-    const sourceMoves = movingGearIds.has(source.id);
-    const targetMoves = movingGearIds.has(target.id);
-
-    if (
-      sourceMoves === targetMoves ||
-      !approximatelyEqual(source.module, target.module)
-    ) {
-      continue;
-    }
-
-    const actualDistance = centerDistance(source.position, target.position);
-
-    if (actualDistance <= NUMERIC_RELATIVE_TOLERANCE) {
-      continue;
-    }
-
-    const expectedDistance = pitchRadius(source) + pitchRadius(target);
-    const distanceError = Math.abs(actualDistance - expectedDistance);
-
-    if (distanceError <= SNAP_CAPTURE_DISTANCE_PX) {
-      candidates.push({
-        connection,
-        distanceError,
-        fixedGear: sourceMoves ? target : source,
-        movingGear: sourceMoves ? source : target,
-      });
+    if (candidate) {
+      candidates.push(candidate);
     }
   }
 
-  return candidates.sort(compareSnapCandidates)[0];
+  candidates.sort(compareSnapCandidates);
+
+  return candidates[0];
+}
+
+function evaluateSnapCandidate(
+  connection: GearConnection,
+  gearsById: ReadonlyMap<string, GearNode>,
+  movingGearIds: ReadonlySet<string>,
+): SnapCandidate | undefined {
+  if (connection.kind !== "mesh") {
+    return undefined;
+  }
+
+  const source = gearsById.get(connection.sourceGearId);
+  const target = gearsById.get(connection.targetGearId);
+
+  if (!source || !target || source.id === target.id) {
+    return undefined;
+  }
+
+  const sourceMoves = movingGearIds.has(source.id);
+  const targetMoves = movingGearIds.has(target.id);
+
+  if (
+    sourceMoves === targetMoves ||
+    !approximatelyEqual(source.module, target.module)
+  ) {
+    return undefined;
+  }
+
+  const actualDistance = centerDistance(source.position, target.position);
+
+  if (actualDistance <= NUMERIC_RELATIVE_TOLERANCE) {
+    return undefined;
+  }
+
+  const expectedDistance = pitchRadius(source) + pitchRadius(target);
+  const distanceError = Math.abs(actualDistance - expectedDistance);
+
+  if (distanceError > SNAP_CAPTURE_DISTANCE_PX) {
+    return undefined;
+  }
+
+  return {
+    connection,
+    distanceError,
+    fixedGear: sourceMoves ? target : source,
+    movingGear: sourceMoves ? source : target,
+  };
 }
 
 function compareSnapCandidates(a: SnapCandidate, b: SnapCandidate): number {
