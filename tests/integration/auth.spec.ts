@@ -34,8 +34,8 @@ test.describe("Auth Flow", () => {
       page.getByRole("button", { name: "Sign In" }),
     ).not.toBeVisible();
 
-    // Click Account to open modal and sign out
-    await page.getByRole("button", { name: "Account" }).click();
+    // The auth modal stays open after verification, already showing the
+    // signed-in view with a Sign Out button.
     await page.getByRole("button", { name: "Sign Out" }).click();
 
     // Verify logged out

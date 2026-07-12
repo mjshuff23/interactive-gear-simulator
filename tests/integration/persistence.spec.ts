@@ -10,6 +10,11 @@ async function login(page: Page, email: string) {
   await page.getByLabel(/6-digit verification code/i).fill(otp);
   await page.getByRole("button", { name: /Verify Code/i }).click();
   await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
+
+  // The auth modal stays open after verification; close it so it doesn't
+  // block subsequent page interactions (it renders as a native <dialog>
+  // which makes the rest of the page inert while open).
+  await page.getByRole("button", { name: "Close" }).click();
 }
 
 test.describe("Persistence", () => {
