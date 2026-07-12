@@ -11,7 +11,7 @@ test.describe("Auth Flow", () => {
       page.getByText("Sign in to view and save to your library."),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page.getByLabel(/Email address/i).fill(email);
     await page.getByRole("button", { name: /Send Verification Code/i }).click();
 

@@ -3,7 +3,7 @@ import { getOtpFromInbucket } from "./helpers/mail";
 
 async function login(page: Page, email: string) {
   await page.goto("/");
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel(/Email address/i).fill(email);
   await page.getByRole("button", { name: /Send Verification Code/i }).click();
   const otp = await getOtpFromInbucket(email);
