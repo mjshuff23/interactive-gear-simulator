@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export async function getOtpFromInbucket(email: string): Promise<string> {
   // List (rather than search) and filter client-side, avoiding any
-  // ambiguity in Mailpit's search-query parsing of the address.
-  const listUrl = `http://127.0.0.1:54324/api/v1/messages?limit=50`;
+  // ambiguity in Mailpit's search-query parsing of the address. Newest
+  // messages come first and the stack is reset per CI run, so a generous
+  // single page is enough to always contain the just-sent OTP.
+  const listUrl = `http://127.0.0.1:54324/api/v1/messages?limit=200`;
   // Keep polling until message appears
   for (let i = 0; i < 20; i++) {
     try {
