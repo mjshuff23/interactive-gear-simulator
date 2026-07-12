@@ -1,0 +1,26 @@
+.githooks/pre-push
+  s_107b7b5aac1bab::t_e5e8a2b960e506 2,6-10,13-16
+tests/integration/helpers/mail.ts
+  s_107b7b5aac1bab::t_91124b3968a6e0 4-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "26d5677c600cde734f9b42c133f7ca987da81d50",
+  "prompts": {},
+  "humans": {
+    "h_d7f45408b008e1": {
+      "author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_107b7b5aac1bab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3cb2186-3de5-4215-86d8-15d79a0a9bf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
