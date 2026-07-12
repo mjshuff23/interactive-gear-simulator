@@ -68,13 +68,19 @@ test.describe("Persistence", () => {
 
     // Context 2 tries to load the updated system
     await page2.getByRole("button", { name: "Load" }).click();
-    // Verify it loaded (the new gear should be visible)
+    // Verify it loaded (the new gear should be an option in the list)
+    const selectedGearCombobox = page2.getByRole("combobox", {
+      name: /Selected gear/i,
+    });
     await expect(
-      page2.getByRole("combobox", { name: /Selected gear/i }),
-    ).toHaveText(/15T gear/);
+      selectedGearCombobox.locator("option", { hasText: "15T gear" }),
+    ).toHaveCount(1);
 
     // Now both have loaded the SAME LATEST STATE.
-    // Context 2 makes a change
+    // Context 2 selects the new (non-driver) gear and deletes it -- the
+    // driver gear can't be deleted, so it must be explicitly selected
+    // first rather than relying on whatever was selected by default.
+    await selectedGearCombobox.selectOption({ label: "15T gear" });
     await page2.getByRole("button", { name: "Delete selected gear" }).click();
 
     // Context 2 saves
