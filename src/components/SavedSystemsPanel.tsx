@@ -81,6 +81,10 @@ export function SavedSystemsPanel({
     try {
       const sys = await loadSavedGearSystem(client, id);
       onLoadSystem(sys);
+      // Refresh the list metadata so the updatedAt baseline used for
+      // optimistic-concurrency checks on the next save reflects what was
+      // just loaded, not whatever was cached from the last list fetch.
+      await loadList();
     } catch (e: unknown) {
       setActionError(
         "Failed to load: " + (e instanceof Error ? e.message : "Unknown error"),
