@@ -1,0 +1,24 @@
+tests/integration/persistence.spec.ts
+  s_107b7b5aac1bab::t_6ca4859cfee211 95-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "1f5bb9ad2d84c6e59c8657f56692698fb496a8e6",
+  "prompts": {},
+  "humans": {
+    "h_d7f45408b008e1": {
+      "author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_107b7b5aac1bab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3cb2186-3de5-4215-86d8-15d79a0a9bf3",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
