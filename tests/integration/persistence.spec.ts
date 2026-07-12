@@ -32,9 +32,13 @@ test.describe("Persistence", () => {
       .selectOption("clock-train");
     await page1.getByRole("button", { name: "Save", exact: true }).click();
 
-    // Check it appeared in the library
+    // Check it appeared in the library (scoped to the library list, since
+    // the same name also appears in the current-system summary, the guided
+    // example dropdown option, and a heading elsewhere on the page)
     await expect(
-      page1.getByText("Idealized Clock-Hand Ratio Train"),
+      page1
+        .locator(".systems-list")
+        .getByText("Idealized Clock-Hand Ratio Train"),
     ).toBeVisible();
 
     // Rename it

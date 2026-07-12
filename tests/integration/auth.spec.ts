@@ -39,6 +39,8 @@ test.describe("Auth Flow", () => {
     await page.getByRole("button", { name: "Sign Out" }).click();
 
     // Verify logged out
-    await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Sign In", exact: true }),
+    ).toBeVisible();
   });
 });
