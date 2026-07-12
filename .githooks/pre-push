@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+echo "Running formatter before push..."
+
+# Snapshot the worktree diff so pre-existing unstaged changes aren't
+# mistaken for formatter output.
+diff_before=$(git diff | git hash-object --stdin)
+
+# Run the format script (set -e blocks the push if it fails)
+pnpm format:write
+
+diff_after=$(git diff | git hash-object --stdin)
+
+# Reject only if the formatter itself modified tracked files
+if [ "$diff_before" != "$diff_after" ]; then
+  echo ""
+  echo "❌ Push rejected: Formatting changed some files."
+  echo "Please review the formatted changes, commit them, and try pushing again."
+  exit 1
+fi
+
+echo "✅ Formatting check passed!"
+exit 0
