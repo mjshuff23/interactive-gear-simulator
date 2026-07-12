@@ -1,0 +1,28 @@
+supabase/config.toml
+  s_107b7b5aac1bab::t_200095c9375cba 251-257
+tests/integration/helpers/mail.ts
+  s_107b7b5aac1bab::t_d120beba9017fe 3-5,9,12-17,19,24-26
+supabase/templates/magic_link.html
+  s_107b7b5aac1bab::t_9e0c10d7cb87cc 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "d30cef6b044997da10bb9926892c3e883f30b004",
+  "prompts": {},
+  "humans": {
+    "h_d7f45408b008e1": {
+      "author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_107b7b5aac1bab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3cb2186-3de5-4215-86d8-15d79a0a9bf3",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
