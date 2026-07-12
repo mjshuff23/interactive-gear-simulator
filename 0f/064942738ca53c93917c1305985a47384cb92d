@@ -1,0 +1,26 @@
+tests/integration/persistence.spec.ts
+  s_107b7b5aac1bab::t_142c67eee5dfef 13-17
+tests/integration/auth.spec.ts
+  s_107b7b5aac1bab::t_c5ab2e1de26c72 37-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "0f064942738ca53c93917c1305985a47384cb92d",
+  "prompts": {},
+  "humans": {
+    "h_d7f45408b008e1": {
+      "author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_107b7b5aac1bab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3cb2186-3de5-4215-86d8-15d79a0a9bf3",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
