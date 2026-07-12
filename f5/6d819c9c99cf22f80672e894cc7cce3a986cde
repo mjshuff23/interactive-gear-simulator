@@ -1,0 +1,26 @@
+.sonarcloud.properties
+  s_107b7b5aac1bab::t_892d654cc316aa 1-5
+supabase/tests/database/00-helpers.test.sql
+  s_107b7b5aac1bab::t_9bf8f4cb1f189f 13-18,22,26,28,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "f56d819c9c99cf22f80672e894cc7cce3a986cde",
+  "prompts": {},
+  "humans": {
+    "h_d7f45408b008e1": {
+      "author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_107b7b5aac1bab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b3cb2186-3de5-4215-86d8-15d79a0a9bf3",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Michael Shuff <mjshuff23@gmail.com>"
+    }
+  }
+}
