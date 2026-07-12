@@ -92,6 +92,11 @@ test.describe("Persistence", () => {
     // Context 1 tries to save (it has a stale updatedAt timestamp)
     await page1.getByRole("button", { name: "Save", exact: true }).click();
 
+    // Wait for the save attempt to finish before checking its outcome
+    await expect(
+      page1.getByRole("button", { name: "Save", exact: true }),
+    ).not.toBeDisabled();
+
     // Should get a stale write error
     await expect(
       page1.getByText("Stale write: The system was updated elsewhere."),
