@@ -248,6 +248,13 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# The default magic link template omits the OTP token, but the app's
+# signInWithOtp() flow verifies via a 6-digit code, so it must be
+# included explicitly.
+[auth.email.template.magic_link]
+subject = "Your verification code"
+content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
